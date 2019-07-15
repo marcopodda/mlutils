@@ -1,2 +1,2 @@
-# mldatautils
-Utilities for datasets in pytorch
+# mlutils
+Utilities for ML experiments in pytorch
