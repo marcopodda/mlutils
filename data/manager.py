@@ -1,18 +1,18 @@
 import os
-import torch
+import operator
 import numpy as np
 from pathlib import Path
 
-from .datasets import Dataset
+import torch
+from torch.utils import data
 
-from utils.os import maybe_makedir
 from utils.serialize import load_yaml, save_yaml
 
 
 class DataManager:
-    def __init__(self, root, dataset_name):
-        self.root = Path(root) / dataset_name
-        self.dataset_name = dataset_name
+    def __init__(self, config):
+        self.config = config
+        self.root = Path(config.root) / config.dataset_name
 
         raw_dir_path = self.root / "raw"
         if not (raw_dir_path).exists():
@@ -26,34 +26,55 @@ class DataManager:
             self._process_data(processed_dir_path)
         self.processed_dir = processed_dir_path
 
-        self.inputs, self.targets = self._load_data()
+        self.dataset = self._load_data()
 
-    def _fetch_data(self, dest_dir):
-        raise NotImplementedError
-
-    def _process_data(self, dest_dir):
-        raise NotImplementedError
-
-    def _load_data(self):
-        raise NotImplementedError
-
-    def split_data(self, splitter):
-        split_names = ['training', 'validation', 'test']
         splits_dir_path = self.root / "splits"
         if not (splits_dir_path).exists():
             os.makedirs(splits_dir_path)
-            indices = range(len(self.inputs))
-            splitter.split(indices, stratification=self.targets)
+            self._split_data(splits_dir_path)
+        self.splits_dir = splits_dir_path
 
-            for split in split_names:
-                save_yaml(splitter.get_split(split), splits_dir_path / f"{split}.yaml")
+        self.splits = self._load_splits()
+        self.outer_folds = len(self.splits['test'])
+        self.inner_folds = len(self.splits['train'][0])
 
-        for split in split_names:
-            setattr(self, f"{split}_split", load_yaml(splits_dir_path / f"{split}.yaml"))
+    def _fetch_data(self, raw_dir):
+        raise NotImplementedError
 
-    def get_dataset(self, name, outer_fold=0, inner_fold=0):
-        indices = getattr(self, f"{name}_split")[outer_fold][inner_fold]
-        return Dataset(self.inputs, self.targets, indices)
+    def _process_data(self, processed_dir):
+        raise NotImplementedError
+
+    def _load_data(self):
+        return torch.load(self.processed_dir / "dataset.pt")
+
+    def _split_data(self, splits_dir_path):
+        splitter = self.config.splitter_class(**self.config.splitter_params)
+        indices, targets = self.dataset.indices, self.dataset.targets
+        splits = splitter.split(indices, stratification=targets)
+        save_yaml(splits, splits_dir_path / "splits.yaml")
+
+    def _load_splits(self):
+        return load_yaml(self.splits_dir / "splits.yaml")
+
+    def get_loader(self, name, outer_fold=0, inner_fold=0):
+        indices = self.splits[name][outer_fold][inner_fold]
+        partition = data.Subset(self.dataset, indices)
+        return data.DataLoader(partition, **self.config.dataloader_params)
+
+    def get_data(self, name, outer_fold=0, inner_fold=0):
+        indices = self.splits[name][outer_fold][inner_fold]
+        partition = operator.itemgetter(*indices)(self.dataset._data)
+        return partition
+
+    @property
+    def dim_input(self):
+        return self.dataset.dim_input
+
+    @property
+    def dim_target(self):
+        return self.dataset.dim_target
+
+
 
 
 

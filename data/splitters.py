@@ -6,12 +6,14 @@ class Splitter:
     def __init__(self, stratified=True):
         self.stratified = stratified
 
-        self.training = []
-        self.validation = []
-        self.test = []
-
     def split(self, indices, stratification=None):
         indices = np.array(indices)
+
+        splits ={
+            'training': [],
+            'validation': [],
+            'test': []
+        }
 
         if self.stratified is True and stratification is None:
             raise ValueError("You must provide a stratification array if 'stratified' is True.")
@@ -21,7 +23,7 @@ class Splitter:
 
         outer_splitter = self.outer_splitter.split(indices, y=stratification)
         for outer_train_idx, outer_test_idx in outer_splitter:
-            self.test.append(indices[outer_test_idx].tolist())
+            splits['test'].append(indices[outer_test_idx].tolist())
 
             if stratification is not None:
                 inner_stratification = stratification[outer_train_idx]
@@ -34,12 +36,10 @@ class Splitter:
                 train_inner_folds.append(outer_train_idx[inner_train_idx].tolist())
                 val_inner_folds.append(outer_train_idx[inner_val_idx].tolist())
 
-            self.training.append(train_inner_folds)
-            self.validation.append(val_inner_folds)
+            splits['training'].append(train_inner_folds)
+            splits['validation'].append(val_inner_folds)
 
-    def get_split(self, name):
-        return getattr(self, name)
-
+        return splits
 
 
 class HoldoutSplitter(Splitter):
