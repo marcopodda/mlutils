@@ -23,17 +23,13 @@ class LoadMixin:
 
 class Config(LoadMixin):
     def __init__(self, **params):
-        self.initialized = False
         self.update(**params)
-        self.initialized = True
 
     def __getitem__(self, name):
         return getattr(self, name)
 
     def update(self, **params):
         for name, value in params.items():
-            if self.initialized and not hasattr(self, name):
-                raise ConfigError(f"Parameter '{name}' is not contained in this Config.")
             setattr(self, name, value)
 
     def save(self, path):

@@ -6,6 +6,7 @@ from pathlib import Path
 import torch
 from torch.utils import data
 
+from utils.module_loading import import_string
 from utils.serialize import load_yaml, save_yaml
 from .splitters import HoldoutSplitter
 
@@ -49,7 +50,7 @@ class DataManager:
         return torch.load(self.processed_dir / "dataset.pt")
 
     def _split_data(self, splits_dir_path):
-        splitter_class = HoldoutSplitter
+        splitter_class = import_string(self.config.splitter_class)
         splitter = splitter_class(**self.config.splitter_params)
         indices, targets = self.dataset.indices, self.dataset.targets
         splits = splitter.split(indices, stratification=targets)

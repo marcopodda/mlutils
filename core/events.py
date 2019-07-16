@@ -15,9 +15,6 @@ class EventDispatcher:
 
 
 class EventHandler:
-    def __init__(self, config):
-        self.config = config
-
     def on_fit_start(self, state):
         pass
 
@@ -30,25 +27,31 @@ class EventHandler:
     def on_epoch_end(self, state):
         pass
 
-    def on_epoch_start(self, state):
+    def on_training_epoch_start(self, state):
         pass
 
-    def on_epoch_end(self, state):
+    def on_training_epoch_end(self, state):
         pass
 
-    def on_batch_start(self, state):
+    def on_validation_epoch_start(self, state):
         pass
 
-    def on_batch_end(self, state):
+    def on_validation_epoch_end(self, state):
         pass
 
-    def on_batch_start(self, state):
+    def on_training_batch_start(self, state):
         pass
 
-    def on_batch_end(self, state):
+    def on_training_batch_end(self, state):
         pass
 
-    def on_parameter_update(self, state):
+    def on_validation_batch_start(self, state):
+        pass
+
+    def on_validation_batch_end(self, state):
+        pass
+
+    def on_backward(self, state):
         pass
 
 

@@ -4,12 +4,16 @@ from .events import EventHandler
 
 class GradientClipper(EventHandler):
     def __init__(self, config):
-        super().__init__(config)
+        self.clip_value = config.grad_clip_params['clip_value']
 
-    def on_parameter_update(self, state):
-        if self.config.grad_clip_name == "norm":
-            clip = clip_grad_norm_
-        elif self.config.grad_clip_name == "value":
-            clip = clip_grad_value_
+    def on_backward(self, state):
+        clip_grad_value_(state.model.parameters(), clip_value=self.clip_value)
 
-        clip(state.model.parameters(), **self.config.grad_clip_params)
+
+class GradientNormClipper(EventHandler):
+    def __init__(self, config):
+        self.max_norm = config.grad_clip_params['max_norm']
+        self.norm_type = config.grad_clip_params.get('norm_type', 2)
+
+    def on_backward(self, state):
+        clip_grad_norm_(state.model.parameters(), max_norm=self.max_norm, norm_type=self.norm_type)

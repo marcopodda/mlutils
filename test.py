@@ -6,9 +6,10 @@ from torch.nn import functional as F
 
 from config.config import Config
 from core.engine import Engine
-from core.metrics import Accuracy, Loss
-from core.scheduler import Scheduler
-from core.gradient_clipping import GradientClipper
+from core.metrics import BinaryAccuracy
+from core.loggers import MetricLogger, LossLogger
+from core.optimizer import Optimizer
+from core.gradient_clipping import GradientNormClipper
 from data.manager import DataManager
 from data.datasets import Dataset
 from sklearn.datasets import make_classification
@@ -70,7 +71,7 @@ class Manager(DataManager):
         pass
 
     def _process_data(self, processed_dir):
-        X, Y = make_classification(n_samples=10000, n_features=10, n_informative=10, n_redundant=0, n_repeated=0, n_classes=2)
+        X, Y = make_classification(n_samples=10000, n_features=100, n_informative=2, n_redundant=2, n_repeated=2, n_classes=2)
 
         data = RandomDataset(np.hstack([X, Y.reshape(-1, 1)]))
         torch.save(data, processed_dir / "dataset.pt")
@@ -81,42 +82,44 @@ class MyEngine(Engine):
         inputs, targets = batch
         outputs = self.model(inputs)
         loss = self.criterion(outputs, targets)
-        return loss, outputs, targets
+        return {'loss': loss, 'outputs': outputs, 'targets': targets}
 
 
 if __name__ == "__main__":
     config_dict = {
         'dim_hidden': 128,
-        'optimizer_name': 'Adam',
+        'optimizer_class': 'torch.optim.Adam',
         'optimizer_params': {
-            'lr': 0.0001
+            'lr': 0.001
         },
         'data_root': "DATA",
         'dataset_name': 'random',
-        'splitter_class': 'HoldoutSplitter',
+        'splitter_class': 'data.splitters.HoldoutSplitter',
         'splitter_params': {},
         'dataloader_params': {
             'batch_size': 32,
             'shuffle': True
         },
         'max_epochs': 1000,
-        'scheduler_name': 'StepLR',
+        'scheduler_class': 'torch.optim.lr_scheduler.StepLR',
         'scheduler_params': {
             'gamma': 0.5,
             'step_size': 30
         },
-        'grad_clip_name': 'value',
+        'grad_clip_name': 'norm',
         'grad_clip_params': {
-            'clip_value': 0.00000001
+            'max_norm': 1.0,
+            'norm_type': 2
         }
     }
 
     config = Config(**config_dict)
-    event_handlers = [Accuracy(config), Scheduler(config), Loss(config), GradientClipper(config)]
+    metrics = {'train_acc': BinaryAccuracy(), 'val_acc': BinaryAccuracy()}
+    event_handlers = [Optimizer(config), LossLogger(), GradientNormClipper(config), MetricLogger(metrics)]
 
     datamanager = Manager(config)
-    train_loader = datamanager.get_loader('training', 0, 0)
-    val_loader = datamanager.get_loader('validation', 0, 0)
+    train_loader = datamanager.get_loader('training')
+    val_loader = datamanager.get_loader('validation')
 
     engine = MyEngine(config, Model, Criterion, datamanager.dim_input, datamanager.dim_target, event_handlers=event_handlers)
     engine.fit(train_loader, val_loader)
