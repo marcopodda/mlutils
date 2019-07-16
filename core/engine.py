@@ -49,7 +49,7 @@ class Engine(EventDispatcher):
             self._dispatch('on_training_batch_start', self.state)
 
             train_dict = self.process_batch(batch)
-            self.state.update(num_batches=len(loader), **train_dict)
+            self.state.update(**train_dict)
 
             self._dispatch('on_backward', self.state)
 
@@ -60,7 +60,7 @@ class Engine(EventDispatcher):
             self._dispatch('on_validation_batch_start', self.state)
 
             val_dict = self.process_batch(batch)
-            self.state.update(num_batches=len(loader), **val_dict)
+            self.state.update(**val_dict)
 
             self._dispatch('on_validation_batch_end', self.state)
 
