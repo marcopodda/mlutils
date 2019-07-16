@@ -30,6 +30,7 @@ class Metric:
 
 class BinaryAccuracy(Metric):
     fun = staticmethod(metrics.accuracy_score)
+    name = "accuracy"
 
     def _prepare_data(self, outputs, targets):
         outputs = torch.sigmoid(outputs)
@@ -38,6 +39,7 @@ class BinaryAccuracy(Metric):
 
 class MulticlassAccuracy(Metric):
     fun = staticmethod(metrics.accuracy_score)
+    name = "accuracy"
 
     def _prepare_data(self, outputs, targets):
         outputs = F.softmax(outputs, dim=-1)
@@ -46,6 +48,7 @@ class MulticlassAccuracy(Metric):
 
 class MSE(Metric):
     fun = staticmethod(metrics.mean_squared_error)
+    name = "mse"
 
     def _prepare_data(self, outputs, targets):
         return outputs, targets

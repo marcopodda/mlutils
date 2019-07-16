@@ -20,9 +20,7 @@ class LossLogger(EventHandler):
     def on_training_epoch_end(self, state):
         epoch_loss = sum(self.batch_losses) / len(self.batch_losses)
         self.losses.append(epoch_loss)
-
-    def on_epoch_end(self, state):
-        print("training loss", self.losses[-1], end=" - ")
+        print(f"training loss: {self.losses[-1]:.6f}")
 
 
 
@@ -32,36 +30,43 @@ class MetricLogger(EventHandler):
         self.outputs = []
         self.targets = []
 
-    def on_training_epoch_start(self, state):
+    def _on_epoch_start(self, state):
         self.outputs = []
         self.targets = []
+
+    def _on_batch_end(self, state):
+        self.outputs.append(state.outputs.detach())
+        self.targets.append(state.targets.detach())
+
+    def _on_epoch_end(self, state):
+        for i, metric in enumerate(self.metrics):
+            outputs = torch.cat(self.outputs)
+            targets = torch.cat(self.targets)
+            metric.update(outputs, targets)
+            print(f"{self.phase} {metric.name}: {metric.value():.6f}")
+
+
+class TrainingMetricLogger(MetricLogger):
+    phase = "training"
+
+    def on_training_epoch_start(self, state):
+        self._on_epoch_start(state)
 
     def on_training_batch_end(self, state):
-        self.outputs.append(state.outputs.detach())
-        self.targets.append(state.targets.detach())
+        self._on_batch_end(state)
 
     def on_training_epoch_end(self, state):
-        for name, metric in self.metrics.items():
-            if "train" in name:
-                outputs = torch.cat(self.outputs)
-                targets = torch.cat(self.targets)
-                metric.update(outputs, targets)
+        self._on_epoch_end(state)
 
-    def on_validation_start(self, state):
-        self.outputs = []
-        self.targets = []
+
+class ValidationMetricLogger(MetricLogger):
+    phase = "validation"
+
+    def on_validation_epoch_start(self, state):
+        self._on_epoch_start(state)
 
     def on_validation_batch_end(self, state):
-        self.outputs.append(state.outputs.detach())
-        self.targets.append(state.targets.detach())
+        self._on_batch_end(state)
 
     def on_validation_epoch_end(self, state):
-        for name, metric in self.metrics.items():
-            if "val" in name:
-                outputs = torch.cat(self.outputs)
-                targets = torch.cat(self.targets)
-                metric.update(outputs, targets)
-
-    def on_epoch_end(self, state):
-        print("training accuracy", self.metrics['train_acc'].value(), end=" - ")
-        print("validation accuracy", self.metrics['val_acc'].value())
+        self._on_epoch_end(state)

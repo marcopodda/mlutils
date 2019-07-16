@@ -7,7 +7,7 @@ from torch.nn import functional as F
 from config.config import Config
 from core.engine import Engine
 from core.metrics import BinaryAccuracy
-from core.loggers import MetricLogger, LossLogger
+from core.loggers import TrainingMetricLogger, ValidationMetricLogger, LossLogger
 from core.optimizer import Optimizer
 from core.gradient_clipping import GradientNormClipper
 from data.manager import DataManager
@@ -114,8 +114,15 @@ if __name__ == "__main__":
     }
 
     config = Config(**config_dict)
-    metrics = {'train_acc': BinaryAccuracy(), 'val_acc': BinaryAccuracy()}
-    event_handlers = [Optimizer(config), LossLogger(), GradientNormClipper(config), MetricLogger(metrics)]
+    train_metrics = [BinaryAccuracy()]
+    val_metrics = [BinaryAccuracy()]
+
+    event_handlers = [
+        Optimizer(config),
+        LossLogger(),
+        GradientNormClipper(config),
+        TrainingMetricLogger(train_metrics),
+        ValidationMetricLogger(val_metrics)]
 
     datamanager = Manager(config)
     train_loader = datamanager.get_loader('training')
