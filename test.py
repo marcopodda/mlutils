@@ -15,38 +15,6 @@ from data.datasets import Dataset
 from sklearn.datasets import make_classification
 
 
-
-class Model(nn.Module):
-    def __init__(self, config, dim_input, dim_target):
-        super().__init__()
-        self.config = config
-        self.dim_input = dim_input
-        self.dim_target = dim_target
-
-        self.linear1 = nn.Linear(dim_input, config.dim_hidden)
-        self.linear2 = nn.Linear(config.dim_hidden, config.dim_hidden)
-        self.linear3 = nn.Linear(config.dim_hidden, dim_target)
-
-    def forward(self, x):
-        x = F.relu(self.linear1(x))
-        x = F.relu(self.linear2(x))
-        return self.linear3(x)
-
-
-class Criterion(nn.Module):
-    def __init__(self, config, dim_target):
-        super().__init__()
-        self.config = config
-        self.dim_target = dim_target
-
-        self.bce = nn.BCEWithLogitsLoss()
-
-    def forward(self, outputs, targets):
-        outputs = outputs.contiguous()
-        targets = targets.contiguous()
-        return self.bce(outputs, targets.squeeze(-1))
-
-
 class RandomDataset(Dataset):
     def __getitem__(self, index):
         inputs = self._data[index, :-1]
@@ -110,7 +78,9 @@ if __name__ == "__main__":
         'grad_clip_params': {
             'max_norm': 1.0,
             'norm_type': 2
-        }
+        },
+        'model_class': 'modules.models.MLP',
+        'criterion_class': 'modules.criterions.BCE'
     }
 
     config = Config(**config_dict)
@@ -128,6 +98,6 @@ if __name__ == "__main__":
     train_loader = datamanager.get_loader('training')
     val_loader = datamanager.get_loader('validation')
 
-    engine = MyEngine(config, Model, Criterion, datamanager.dim_input, datamanager.dim_target, event_handlers=event_handlers)
+    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, event_handlers=event_handlers)
     engine.fit(train_loader, val_loader)
 

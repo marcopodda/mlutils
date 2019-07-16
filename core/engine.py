@@ -5,12 +5,12 @@ from .events import EventDispatcher, State
 
 
 class Engine(EventDispatcher):
-    def __init__(self, config, model_class, criterion_class, dim_input, dim_target, event_handlers=[]):
+    def __init__(self, config, dim_input, dim_target, event_handlers=[]):
         super().__init__(event_handlers=event_handlers)
 
         self.config = config
-        self.model = model_class(config, dim_input, dim_target)
-        self.criterion = criterion_class(config, dim_target)
+        self.model = import_string(config.model_class)(config, dim_input, dim_target)
+        self.criterion = import_string(config.criterion_class)(config, dim_target)
         state_dict = {
             'config': config,
             'model': self.model,
