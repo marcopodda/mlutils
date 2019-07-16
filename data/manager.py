@@ -7,12 +7,13 @@ import torch
 from torch.utils import data
 
 from utils.serialize import load_yaml, save_yaml
+from .splitters import HoldoutSplitter
 
 
 class DataManager:
     def __init__(self, config):
         self.config = config
-        self.root = Path(config.root) / config.dataset_name
+        self.root = Path(config.data_root) / config.dataset_name
 
         raw_dir_path = self.root / "raw"
         if not (raw_dir_path).exists():
@@ -36,7 +37,7 @@ class DataManager:
 
         self.splits = self._load_splits()
         self.outer_folds = len(self.splits['test'])
-        self.inner_folds = len(self.splits['train'][0])
+        self.inner_folds = len(self.splits['training'][0])
 
     def _fetch_data(self, raw_dir):
         raise NotImplementedError
@@ -48,7 +49,8 @@ class DataManager:
         return torch.load(self.processed_dir / "dataset.pt")
 
     def _split_data(self, splits_dir_path):
-        splitter = self.config.splitter_class(**self.config.splitter_params)
+        splitter_class = HoldoutSplitter
+        splitter = splitter_class(**self.config.splitter_params)
         indices, targets = self.dataset.indices, self.dataset.targets
         splits = splitter.split(indices, stratification=targets)
         save_yaml(splits, splits_dir_path / "splits.yaml")
