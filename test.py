@@ -9,7 +9,7 @@ from core.engine import Engine
 from core.metrics import BinaryAccuracy
 from core.loggers import TrainingMetricLogger, ValidationMetricLogger, LossLogger
 from core.optimizer import Optimizer
-from core.gradient_clipping import GradientNormClipper
+from core.gradient_clipping import GradientClipper
 from data.manager import DataManager
 from data.datasets import Dataset
 from sklearn.datasets import make_classification
@@ -55,11 +55,13 @@ class MyEngine(Engine):
 
 if __name__ == "__main__":
     config_dict = {
-        'dim_hidden': 128,
+        'model_class': 'modules.models.MLP',
+        'criterion_class': 'modules.criterions.BCE',
         'optimizer_class': 'torch.optim.Adam',
         'optimizer_params': {
             'lr': 0.001
         },
+        'dim_hidden': 128,
         'data_root': "DATA",
         'dataset_name': 'random',
         'splitter_class': 'data.splitters.HoldoutSplitter',
@@ -74,13 +76,11 @@ if __name__ == "__main__":
             'gamma': 0.5,
             'step_size': 30
         },
-        'grad_clip_name': 'norm',
+        'grad_clip_func': 'torch.nn.utils.clip_grad.clip_grad_norm_',
         'grad_clip_params': {
             'max_norm': 1.0,
             'norm_type': 2
-        },
-        'model_class': 'modules.models.MLP',
-        'criterion_class': 'modules.criterions.BCE'
+        }
     }
 
     config = Config(**config_dict)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     event_handlers = [
         Optimizer(config),
         LossLogger(),
-        GradientNormClipper(config),
+        GradientClipper(config),
         TrainingMetricLogger(train_metrics),
         ValidationMetricLogger(val_metrics)]
 
