@@ -51,7 +51,6 @@ class Engine(EventDispatcher):
             train_dict = self.process_batch(batch)
             self.state.update(num_batches=len(loader), **train_dict)
 
-            # train_dict['loss'].backward()
             self._dispatch('on_backward', self.state)
 
             self._dispatch('on_training_batch_end', self.state)
