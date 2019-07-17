@@ -1,11 +1,12 @@
 import torch
 
 from .events import EventHandler
+from utils.module_loading import import_string
 
 
 class LossLogger(EventHandler):
-    def __init__(self):
-        self.losses = []
+    def __init__(self, path=None):
+        self.losses = [] if path is None else torch.load(path / 'losses.pt')
         self.batch_losses = []
 
     def on_training_batch_start(self, state):
@@ -14,19 +15,28 @@ class LossLogger(EventHandler):
     def on_training_batch_end(self, state):
         self.batch_losses.append(state.loss.item())
 
-    def on_backward(self, state):
-        state.loss.backward()
-
     def on_training_epoch_end(self, state):
         epoch_loss = sum(self.batch_losses) / len(self.batch_losses)
         self.losses.append(epoch_loss)
         print(f"training loss: {self.losses[-1]:.6f}")
 
+    def save(self, path):
+        torch.save(self.losses, path / 'losses.pt')
+
+    def on_fit_end(self, state):
+        print(len(self.losses), self)
+
 
 
 class MetricLogger(EventHandler):
-    def __init__(self, metrics):
-        self.metrics = metrics
+    def __init__(self, metrics=[], path=None):
+        self.metrics = []
+
+        for class_name in metrics:
+            metric_class = import_string(class_name)
+            metric = metric_class(path=path, phase=self.phase)
+            self.metrics.append(metric)
+
         self.outputs = []
         self.targets = []
 
@@ -44,6 +54,10 @@ class MetricLogger(EventHandler):
             targets = torch.cat(self.targets)
             metric.update(outputs, targets)
             print(f"{self.phase} {metric.name}: {metric.value():.6f}")
+
+    def save(self, path):
+        for metric in self.metrics:
+            torch.save(metric.values, path / f"{self.phase}_{metric.name}.pt")
 
 
 class TrainingMetricLogger(MetricLogger):

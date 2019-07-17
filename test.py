@@ -8,30 +8,10 @@ from config.config import Config
 from core.engine import Engine
 from core.metrics import BinaryAccuracy
 from core.loggers import TrainingMetricLogger, ValidationMetricLogger, LossLogger
-from core.optimizer import Optimizer
 from core.gradient_clipping import GradientClipper
 from data.manager import DataManager
-from data.datasets import Dataset
+from data.datasets import RandomDataset
 from sklearn.datasets import make_classification
-
-
-class RandomDataset(Dataset):
-    def __getitem__(self, index):
-        inputs = self._data[index, :-1]
-        targets = self._data[index, -1].reshape(-1, 1)
-        return torch.FloatTensor(inputs), torch.FloatTensor(targets)
-
-    @property
-    def targets(self):
-        return self._data[:,-1]
-
-    @property
-    def dim_input(self):
-        return self._data[:,:-1].shape[1]
-
-    @property
-    def dim_target(self):
-        return 1
 
 
 class Manager(DataManager):
@@ -54,50 +34,25 @@ class MyEngine(Engine):
 
 
 if __name__ == "__main__":
-    config_dict = {
-        'model_class': 'modules.models.MLP',
-        'criterion_class': 'modules.criterions.BCE',
-        'optimizer_class': 'torch.optim.Adam',
-        'optimizer_params': {
-            'lr': 0.001
-        },
-        'dim_hidden': 128,
-        'data_root': "DATA",
-        'dataset_name': 'random',
-        'splitter_class': 'data.splitters.HoldoutSplitter',
-        'splitter_params': {},
-        'dataloader_params': {
-            'batch_size': 32,
-            'shuffle': True
-        },
-        'max_epochs': 1000,
-        'scheduler_class': 'torch.optim.lr_scheduler.StepLR',
-        'scheduler_params': {
-            'gamma': 0.5,
-            'step_size': 30
-        },
-        'grad_clip_func': 'torch.nn.utils.clip_grad.clip_grad_norm_',
-        'grad_clip_params': {
-            'max_norm': 1.0,
-            'norm_type': 2
-        }
-    }
-
-    config = Config(**config_dict)
-    train_metrics = [BinaryAccuracy()]
-    val_metrics = [BinaryAccuracy()]
-
-    event_handlers = [
-        Optimizer(config),
-        LossLogger(),
-        GradientClipper(config),
-        TrainingMetricLogger(train_metrics),
-        ValidationMetricLogger(val_metrics)]
+    from pathlib import Path
+    config = Config()
 
     datamanager = Manager(config)
     train_loader = datamanager.get_loader('training')
     val_loader = datamanager.get_loader('validation')
 
-    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, event_handlers=event_handlers)
-    engine.fit(train_loader, val_loader)
+    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target) #, event_handlers=event_handlers)
+    engine.fit(train_loader, val_loader, max_epochs=2)
+    print(engine._event_handlers)
+    engine.save(Path('ckpts'))
+    engine.unregister_all()
+    # del engine
+    datamanager = Manager(config)
+    train_loader = datamanager.get_loader('training')
+    val_loader = datamanager.get_loader('validation')
+    engine2 = MyEngine(config, datamanager.dim_input, datamanager.dim_target, path=Path('ckpts'))
+
+    engine2.fit(train_loader, val_loader, max_epochs=3)
+    print(engine2._event_handlers)
+
 

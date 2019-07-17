@@ -5,9 +5,10 @@ from .events import EventHandler
 
 
 class GradientClipper(EventHandler):
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, func=None, args=None, **kwargs):
+        self.func = func
+        self.func_args = args
 
     def on_backward(self, state):
-        clip_grad_func = import_string(self.config.grad_clip_func)
-        clip_grad_func(state.model.parameters(), **self.config.grad_clip_params)
+        clip_grad_func = import_string(self.func)
+        clip_grad_func(state.model.parameters(), **self.func_args)

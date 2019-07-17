@@ -36,3 +36,21 @@ class Collator:
     def __call__(self, batch):
         raise NotImplementedError
 
+
+class RandomDataset(Dataset):
+    def __getitem__(self, index):
+        inputs = self._data[index, :-1]
+        targets = self._data[index, -1].reshape(-1, 1)
+        return torch.FloatTensor(inputs), torch.FloatTensor(targets)
+
+    @property
+    def targets(self):
+        return self._data[:,-1]
+
+    @property
+    def dim_input(self):
+        return self._data[:,:-1].shape[1]
+
+    @property
+    def dim_target(self):
+        return 1

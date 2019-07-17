@@ -2,12 +2,14 @@ from torch import nn
 
 
 class BCE(nn.Module):
-    def __init__(self, config, dim_target):
+    def __init__(self, config, state_dict={}, device='cpu', **kwargs):
         super().__init__()
         self.config = config
-        self.dim_target = dim_target
-
         self.bce = nn.BCEWithLogitsLoss()
+        self.device = device
+
+        if state_dict != {}:
+            self.load_state_dict(state_dict)
 
     def forward(self, outputs, targets):
         outputs = outputs.contiguous()

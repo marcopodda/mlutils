@@ -7,8 +7,8 @@ from .events import EventHandler
 
 
 class Metric:
-    def __init__(self):
-        self.values = []
+    def __init__(self, path=None, phase=None):
+        self.values = [] if path is None else torch.load(path / f"{phase}_{self.name}.pt")
 
     def update(self, outputs, targets):
         if targets.dim() - outputs.dim() > 0:
