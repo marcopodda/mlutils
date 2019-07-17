@@ -23,56 +23,52 @@ def build_criterion(config):
 
 
 class Engine(EventDispatcher):
-    def __init__(self, config, dim_input, dim_target, path=None):
+    def __init__(self, config, dim_input, dim_target, load_path=None, best=False):
         super().__init__()
         self.config = config
 
-        self.model = build_model(config, dim_input, dim_target)
-        self.criterion = build_criterion(config)
+        self.state = State(
+            model=build_model(config, dim_input, dim_target),
+            criterion=build_criterion(config),
+            epoch=0)
 
-        if path is not None:
-            self.model.load_state_dict(torch.load(path / 'model.pt'))
-            self.criterion.load_state_dict(torch.load(path / 'criterion.pt'))
-
-        self.register(Optimizer(config, self.model, path=path))
+        self.register(Optimizer(config, self.state.model))
         for entry in config.get('event_handlers'):
             eh_class = import_string(entry.class_name)
-            eh = eh_class(path=path, **entry.params)
+            eh = eh_class(**entry.params)
             self.register(eh)
 
         for entry in config.get('metrics'):
             eh_class = import_string(entry.class_name)
-            eh = eh_class(path=path, **entry.params)
+            eh = eh_class(**entry.params)
             self.register(eh)
 
-        state_dict = {
-            'config': config,
-            'model': self.model,
-            'criterion': self.criterion,
-        }
-
-        self.state = State(**state_dict)
+        if load_path is not None:
+            filename = 'best.pt' if best else 'last.pt'
+            self.state.load(load_path / filename)
 
     def fit(self, train_loader, val_loader=None, max_epochs=None):
         self._dispatch('on_fit_start', self.state)
 
         max_epochs = max_epochs or self.config.max_epochs
-        for epoch in range(max_epochs):
+
+        for epoch in range(self.state.epoch, max_epochs):
+            self.state.update(epoch=epoch)
             self._dispatch('on_epoch_start', self.state)
 
-            self.model.train()
+            self.state.model.train()
             self._dispatch('on_training_epoch_start', self.state)
             self._train(epoch, train_loader)
             self._dispatch('on_training_epoch_end', self.state)
 
             if val_loader is not None:
-                self.model.eval()
+                self.state.model.eval()
                 self._dispatch('on_validation_epoch_start', self.state)
                 self._validate(epoch, val_loader)
                 self._dispatch('on_validation_epoch_end', self.state)
 
-                if self.state.stop_training:
-                    break
+                # if self.state.stop_training:
+                #     break
 
             self._dispatch('on_epoch_end', self.state)
 
@@ -101,7 +97,14 @@ class Engine(EventDispatcher):
     def process_batch(self, batch):
         raise NotImplementedError
 
-    def save(self, path):
-        torch.save(self.model.state_dict(), path / 'model.pt')
-        torch.save(self.criterion.state_dict(), path / 'criterion.pt')
-        self._dispatch('save', path)
+    def get_current_epoch(self):
+        return 0
+
+    def save(self, path, best=False):
+        state_dict = self.state.state_dict()
+        for event_handler in self._event_handlers:
+            state_dict.update(event_handler.state_dict())
+        print(state_dict['epoch'])
+
+        filename = 'best.pt' if best else 'last.pt'
+        torch.save(state_dict, path / filename)

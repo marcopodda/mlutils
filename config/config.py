@@ -7,7 +7,7 @@ The value associated with parameter '{key}' must be a list.
 """
 
 
-DEFAULT_CONFIG = {
+DEFAULTS = {
     'max_epochs': 10,
     'device': 'cpu',
     'model': {
@@ -90,9 +90,10 @@ class LoadMixin:
 
 
 class Config(LoadMixin):
-    def __init__(self, **config_dict):
-        for name, value in DEFAULT_CONFIG.items():
-            setattr(self, name, value)
+    def __init__(self, use_defaults=True, **config_dict):
+        if use_defaults:
+            for name, value in DEFAULTS.items():
+                setattr(self, name, value)
 
         for name, value in config_dict.items():
             setattr(self, name, value)
@@ -109,12 +110,12 @@ class Config(LoadMixin):
             config_dict = config_dict[key]
 
         if isinstance(config_dict, list):
-            return [Config(**cd) for cd in config_dict]
+            return [Config(use_defaults=False, **cd) for cd in config_dict]
 
         if not isinstance(config_dict, dict):
             raise ValueError(f"'{config_dict}' is not a dictionary.")
 
-        return Config(**config_dict)
+        return Config(use_defaults=False, **config_dict)
 
     def save(self, path):
         save_yaml(self.__dict__, path)

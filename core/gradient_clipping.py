@@ -12,3 +12,4 @@ class GradientClipper(EventHandler):
     def on_backward(self, state):
         clip_grad_func = import_string(self.func)
         clip_grad_func(state.model.parameters(), **self.func_args)
+        clip_grad_func(state.criterion.parameters(), **self.func_args)

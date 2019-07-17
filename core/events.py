@@ -1,3 +1,6 @@
+import torch
+
+
 class EventDispatcher:
     def __init__(self):
         self._event_handlers = []
@@ -62,13 +65,16 @@ class EventHandler:
     def on_backward(self, state):
         pass
 
-    def save(self, path):
+    def state_dict(self):
+        return {}
+
+    def load_state_dict(self, state_dict):
         pass
 
 
 class State:
     def __init__(self, **values):
-        self.update(stop_training=False, **values)
+        self.update(**values)
 
     def update(self, **values):
         for name, value in values.items():
@@ -77,3 +83,18 @@ class State:
     def remove(self, *names):
         for name in names:
             delattr(self, name)
+
+    def state_dict(self):
+        state_dict = self.__dict__.copy()
+        for key, obj in state_dict.items():
+            if hasattr(obj, 'state_dict'):
+                state_dict[key] = obj.state_dict()
+        return state_dict
+
+    def load(self, path):
+        state_dict = torch.load(path)
+        for key, obj in state_dict.items():
+            if hasattr(self, 'load_state_dict'):
+                self.update(key=obj.load_state_dict())
+            else:
+                self.update(key=obj)

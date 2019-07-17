@@ -27,8 +27,8 @@ class Manager(DataManager):
 class MyEngine(Engine):
     def process_batch(self, batch):
         inputs, targets = batch
-        outputs = self.model(inputs)
-        loss = self.criterion(outputs, targets)
+        outputs = self.state.model(inputs)
+        loss = self.state.criterion(outputs, targets)
         return {'loss': loss, 'outputs': outputs, 'targets': targets}
 
 
@@ -40,7 +40,12 @@ if __name__ == "__main__":
     train_loader = datamanager.get_loader('training')
     val_loader = datamanager.get_loader('validation')
 
-    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target) #, event_handlers=event_handlers)
+    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target)
     engine.fit(train_loader, val_loader, max_epochs=2)
+    engine.save(Path('ckpts'))
+
+    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, load_path=Path('ckpts'))
+    engine.fit(train_loader, val_loader, max_epochs=5)
+    engine.save(Path('ckpts'))
 
 

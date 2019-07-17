@@ -5,8 +5,8 @@ from utils.module_loading import import_string
 
 
 class LossLogger(EventHandler):
-    def __init__(self, path=None):
-        self.losses = [] if path is None else torch.load(path / 'losses.pt')
+    def __init__(self):
+        self.losses = []
         self.batch_losses = []
 
     def on_training_batch_start(self, state):
@@ -20,18 +20,21 @@ class LossLogger(EventHandler):
         self.losses.append(epoch_loss)
         print(f"training loss: {self.losses[-1]:.6f}")
 
-    def save(self, path):
-        torch.save(self.losses, path / 'losses.pt')
+    def state_dict(self):
+        return {'losses': self.losses}
 
+    def load_state_dict(self, state_dict):
+        if 'losses' in self.losses:
+            self.losses = state_dict['losses']
 
 
 class MetricLogger(EventHandler):
-    def __init__(self, metrics=[], path=None):
+    def __init__(self, metrics=[]):
         self.metrics = []
 
         for class_name in metrics:
             metric_class = import_string(class_name)
-            metric = metric_class(path=path, phase=self.phase)
+            metric = metric_class(phase=self.phase)
             self.metrics.append(metric)
 
         self.outputs = []
@@ -52,9 +55,17 @@ class MetricLogger(EventHandler):
             metric.update(outputs, targets)
             print(f"{self.phase} {metric.name}: {metric.value():.6f}")
 
-    def save(self, path):
+    def state_dict(self):
+        state_dict = {f'{self.phase}_metrics': {}}
         for metric in self.metrics:
-            torch.save(metric.values, path / f"{self.phase}_{metric.name}.pt")
+            state_dict[f'{self.phase}_metrics'].update({metric.name: metric.values})
+        return state_dict
+
+    def load_state_dict(self, state_dict):
+        if f'{self.phase}_metrics' in state_dict:
+            for metric in self.metrics:
+                if metric.name in state_dict[f'{self.phase}_metrics']:
+                    metric.values = state_dict[f'{self.phase}_metrics'][metric.name]
 
 
 class TrainingMetricLogger(MetricLogger):

@@ -7,8 +7,8 @@ from .events import EventHandler
 
 
 class Metric:
-    def __init__(self, path=None, phase=None):
-        self.values = [] if path is None else torch.load(path / f"{phase}_{self.name}.pt")
+    def __init__(self, phase=None):
+        self.values = []
 
     def update(self, outputs, targets):
         if targets.dim() - outputs.dim() > 0:
@@ -26,6 +26,10 @@ class Metric:
         if self.values == []:
             return None
         return self.values[-1]
+
+    def state_dict(self, phase):
+        return {f"{phase}_{self.name}": self.values}
+
 
 
 class BinaryAccuracy(Metric):
