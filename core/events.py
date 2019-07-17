@@ -1,6 +1,6 @@
 class EventDispatcher:
-    def __init__(self, event_handlers=[]):
-        self._event_handlers = event_handlers
+    def __init__(self):
+        self._event_handlers = []
 
     def _dispatch(self, event_name, state):
         for event_handler in self._event_handlers:

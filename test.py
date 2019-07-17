@@ -43,16 +43,5 @@ if __name__ == "__main__":
 
     engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target) #, event_handlers=event_handlers)
     engine.fit(train_loader, val_loader, max_epochs=2)
-    print(engine._event_handlers)
-    engine.save(Path('ckpts'))
-    engine.unregister_all()
-    # del engine
-    datamanager = Manager(config)
-    train_loader = datamanager.get_loader('training')
-    val_loader = datamanager.get_loader('validation')
-    engine2 = MyEngine(config, datamanager.dim_input, datamanager.dim_target, path=Path('ckpts'))
-
-    engine2.fit(train_loader, val_loader, max_epochs=3)
-    print(engine2._event_handlers)
 
 
