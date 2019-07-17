@@ -8,14 +8,6 @@ The value associated with parameter '{key}' must be a list.
 
 
 DEFAULT_CONFIG = {
-    'data_root': "DATA",
-    'dataset_name': 'random',
-    'splitter_class': 'data.splitters.HoldoutSplitter',
-    'splitter_params': {},
-    'dataloader_params': {
-        'batch_size': 32,
-        'shuffle': True
-    },
     'max_epochs': 10,
     'device': 'cpu',
     'model': {
