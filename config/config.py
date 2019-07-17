@@ -13,7 +13,7 @@ DEFAULTS = {
     'model': {
         'class_name': 'modules.models.MLP',
         'params': {
-            'dim_hidden': 128
+            'dim_layers': [256, 128]
         }
     },
     'criterion': {
