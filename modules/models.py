@@ -3,19 +3,15 @@ from torch.nn import functional as F
 
 
 class MLP(nn.Module):
-    def __init__(self, config, dim_input, dim_target, state_dict={}, device='cpu', **kwargs):
+    def __init__(self, dim_input, dim_target, **params):
         super().__init__()
-        self.config = config
         self.dim_input = dim_input
+        self.dim_hidden = params['dim_hidden']
         self.dim_target = dim_target
-        self.device = device
 
-        self.linear1 = nn.Linear(dim_input, config.dim_hidden)
-        self.linear2 = nn.Linear(config.dim_hidden, config.dim_hidden)
-        self.linear3 = nn.Linear(config.dim_hidden, dim_target)
-
-        if state_dict != {}:
-            self.load_state_dict(state_dict)
+        self.linear1 = nn.Linear(self.dim_input, self.dim_hidden)
+        self.linear2 = nn.Linear(self.dim_hidden, self.dim_hidden)
+        self.linear3 = nn.Linear(self.dim_hidden, self.dim_target)
 
     def forward(self, x):
         x = F.relu(self.linear1(x))

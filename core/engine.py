@@ -2,7 +2,24 @@ import torch
 
 from core.optimizer import Optimizer
 from utils.module_loading import import_string
+from utils.training import get_device
+
 from .events import EventDispatcher, State
+
+
+def build_model(config, dim_input, dim_target):
+    model_config = config.get('model')
+    model_class = import_string(model_config.class_name)
+    model = model_class(dim_input, dim_target, **model_config.params)
+    device = get_device(config)
+    return model.to(device)
+
+def build_criterion(config):
+    criterion_config = config.get('criterion')
+    criterion_class = import_string(criterion_config.class_name)
+    criterion = criterion_class(**criterion_config.params)
+    device = get_device(config)
+    return criterion.to(device)
 
 
 class Engine(EventDispatcher):
@@ -10,8 +27,8 @@ class Engine(EventDispatcher):
         super().__init__()
         self.config = config
 
-        self.model = import_string(config.model_class)(config, dim_input, dim_target, device=config.device)
-        self.criterion = import_string(config.criterion_class)(config, device=config.device)
+        self.model = build_model(config, dim_input, dim_target)
+        self.criterion = build_criterion(config)
 
         if path is not None:
             self.model.load_state_dict(torch.load(path / 'model.pt'))

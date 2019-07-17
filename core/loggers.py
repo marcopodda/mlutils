@@ -23,9 +23,6 @@ class LossLogger(EventHandler):
     def save(self, path):
         torch.save(self.losses, path / 'losses.pt')
 
-    def on_fit_end(self, state):
-        print(len(self.losses), self)
-
 
 
 class MetricLogger(EventHandler):
