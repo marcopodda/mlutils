@@ -65,6 +65,18 @@ class EventHandler:
     def on_backward(self, state):
         pass
 
+    def on_test_start(self, state):
+        pass
+
+    def on_test_end(self, state):
+        pass
+
+    def on_test_batch_start(self, state):
+        pass
+
+    def on_test_batch_end(self, state):
+        pass
+
     def state_dict(self):
         return {}
 
@@ -75,6 +87,7 @@ class EventHandler:
 class State:
     def __init__(self, **values):
         self.update(**values)
+        self.stop_training = False
 
     def update(self, **values):
         for name, value in values.items():

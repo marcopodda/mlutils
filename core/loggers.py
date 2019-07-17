@@ -9,23 +9,62 @@ class LossLogger(EventHandler):
         self.losses = []
         self.batch_losses = []
 
-    def on_training_batch_start(self, state):
+    def _on_batch_start(self, state):
         self.batch_losses = []
 
-    def on_training_batch_end(self, state):
+    def _on_batch_end(self, state):
         self.batch_losses.append(state.loss.item())
 
-    def on_training_epoch_end(self, state):
+    def _on_epoch_end(self, state):
         epoch_loss = sum(self.batch_losses) / len(self.batch_losses)
         self.losses.append(epoch_loss)
-        print(f"training loss: {self.losses[-1]:.6f}")
+        print(f"{self.phase} loss: {self.losses[-1]:.6f}")
 
     def state_dict(self):
-        return {'losses': self.losses}
+        return {f"{self.phase}_losses": self.losses}
 
     def load_state_dict(self, state_dict):
-        if 'losses' in self.losses:
-            self.losses = state_dict['losses']
+        if 'losses' in state_dict:
+            self.losses = state_dict[f"{self.phase}_losses"]
+
+
+class TrainingLossLogger(LossLogger):
+    phase = "training"
+
+    def on_training_batch_start(self, state):
+        self._on_batch_start(state)
+
+    def on_training_batch_end(self, state):
+        self._on_batch_end(state)
+
+    def on_training_epoch_end(self, state):
+        self._on_epoch_end(state)
+
+
+class ValidationLossLogger(LossLogger):
+    phase = "validation"
+
+    def on_validation_batch_start(self, state):
+        self._on_batch_start(state)
+
+    def on_validation_batch_end(self, state):
+        self._on_batch_end(state)
+
+    def on_validation_epoch_end(self, state):
+        self._on_epoch_end(state)
+
+
+class TestLossLogger(LossLogger):
+    phase = "test"
+
+    def on_test_batch_start(self, state):
+        self._on_batch_start(state)
+
+    def on_test_batch_end(self, state):
+        self._on_batch_end(state)
+
+    def on_test_end(self, state):
+        self._on_epoch_end(state)
 
 
 class MetricLogger(EventHandler):
@@ -91,4 +130,17 @@ class ValidationMetricLogger(MetricLogger):
         self._on_batch_end(state)
 
     def on_validation_epoch_end(self, state):
+        self._on_epoch_end(state)
+
+
+class TestMetricLogger(MetricLogger):
+    phase = "test"
+
+    def on_test_start(self, state):
+        self._on_epoch_start(state)
+
+    def on_test_batch_end(self, state):
+        self._on_batch_end(state)
+
+    def on_test_end(self, state):
         self._on_epoch_end(state)

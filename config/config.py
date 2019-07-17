@@ -48,7 +48,15 @@ DEFAULTS = {
     },
     'event_handlers': [
         {
-            'class_name': 'core.loggers.LossLogger',
+            'class_name': 'core.loggers.TrainingLossLogger',
+            'params': {}
+        },
+        {
+            'class_name': 'core.loggers.ValidationLossLogger',
+            'params': {}
+        },
+        {
+            'class_name': 'core.loggers.TestLossLogger',
             'params': {}
         },
         {
@@ -70,6 +78,12 @@ DEFAULTS = {
         },
         {
             'class_name': 'core.loggers.ValidationMetricLogger',
+            'params': {
+                'metrics': ['core.metrics.BinaryAccuracy']
+            }
+        },
+        {
+            'class_name': 'core.loggers.TestMetricLogger',
             'params': {
                 'metrics': ['core.metrics.BinaryAccuracy']
             }

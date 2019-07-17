@@ -58,23 +58,24 @@ class Engine(EventDispatcher):
 
             self.state.model.train()
             self._dispatch('on_training_epoch_start', self.state)
-            self._train(epoch, train_loader)
+            self._train_one_epoch(train_loader)
             self._dispatch('on_training_epoch_end', self.state)
 
             if val_loader is not None:
                 self.state.model.eval()
                 self._dispatch('on_validation_epoch_start', self.state)
-                self._validate(epoch, val_loader)
+                self._validate_one_epoch(val_loader)
                 self._dispatch('on_validation_epoch_end', self.state)
 
-                # if self.state.stop_training:
-                #     break
+            if self.state.stop_training:
+                print('Early stopping.')
+                break
 
             self._dispatch('on_epoch_end', self.state)
 
         self._dispatch('on_fit_end', self.state)
 
-    def _train(self, epoch, loader):
+    def _train_one_epoch(self, loader):
         for idx, batch in enumerate(loader):
             self._dispatch('on_training_batch_start', self.state)
 
@@ -86,13 +87,19 @@ class Engine(EventDispatcher):
 
             self._dispatch('on_training_batch_end', self.state)
 
-    def _validate(self, epoch, loader):
+    def _validate_one_epoch(self, loader):
         for idx, batch in enumerate(loader):
             self._dispatch('on_validation_batch_start', self.state)
-
             self.state.update(**self.process_batch(batch))
-
             self._dispatch('on_validation_batch_end', self.state)
+
+    def evaluate(self, test_loader):
+        self._dispatch('on_test_start', self.state)
+        for idx, batch in enumerate(test_loader):
+            self._dispatch('on_test_batch_start', self.state)
+            self.state.update(**self.process_batch(batch))
+            self._dispatch('on_test_batch_end', self.state)
+        self._dispatch('on_test_end', self.state)
 
     def process_batch(self, batch):
         raise NotImplementedError
@@ -104,7 +111,7 @@ class Engine(EventDispatcher):
         state_dict = self.state.state_dict()
         for event_handler in self._event_handlers:
             state_dict.update(event_handler.state_dict())
-        print(state_dict['epoch'])
+        print(state_dict)
 
         filename = 'best.pt' if best else 'last.pt'
         torch.save(state_dict, path / filename)

@@ -23,7 +23,7 @@ class Splitter:
 
         outer_splitter = self.outer_splitter.split(indices, y=stratification)
         for outer_train_idx, outer_test_idx in outer_splitter:
-            splits['test'].append(indices[outer_test_idx].tolist())
+            splits['test'].append([indices[outer_test_idx].tolist()])
 
             if stratification is not None:
                 inner_stratification = stratification[outer_train_idx]
