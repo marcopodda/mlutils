@@ -20,7 +20,6 @@ class Manager(DataManager):
 
     def _process_data(self, processed_dir):
         X, Y = make_classification(n_samples=10000, n_features=100, n_informative=2, n_redundant=2, n_repeated=2, n_classes=2)
-
         data = RandomDataset(np.hstack([X, Y.reshape(-1, 1)]))
         torch.save(data, processed_dir / "dataset.pt")
 
@@ -37,7 +36,7 @@ if __name__ == "__main__":
     from pathlib import Path
     config = Config()
 
-    datamanager = Manager(config)
+    datamanager = Manager(config.get('data'))
     train_loader = datamanager.get_loader('training')
     val_loader = datamanager.get_loader('validation')
 

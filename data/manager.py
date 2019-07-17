@@ -14,7 +14,7 @@ from .splitters import HoldoutSplitter
 class DataManager:
     def __init__(self, config):
         self.config = config
-        self.root = Path(config.data_root) / config.dataset_name
+        self.root = Path(config.root) / config.name
 
         raw_dir_path = self.root / "raw"
         if not (raw_dir_path).exists():
@@ -50,8 +50,9 @@ class DataManager:
         return torch.load(self.processed_dir / "dataset.pt")
 
     def _split_data(self, splits_dir_path):
-        splitter_class = import_string(self.config.splitter_class)
-        splitter = splitter_class(**self.config.splitter_params)
+        splitter_config = self.config.get('splitter')
+        splitter_class = import_string(splitter_config.class_name)
+        splitter = splitter_class(**splitter_config.params)
         indices, targets = self.dataset.indices, self.dataset.targets
         splits = splitter.split(indices, stratification=targets)
         save_yaml(splits, splits_dir_path / "splits.yaml")
@@ -62,7 +63,9 @@ class DataManager:
     def get_loader(self, name, outer_fold=0, inner_fold=0):
         indices = self.splits[name][outer_fold][inner_fold]
         partition = data.Subset(self.dataset, indices)
-        return data.DataLoader(partition, **self.config.dataloader_params)
+        loader_config = self.config.get('loader')
+        loader_class = import_string(loader_config.class_name)
+        return loader_class(partition, **loader_config.params)
 
     def get_data(self, name, outer_fold=0, inner_fold=0):
         indices = self.splits[name][outer_fold][inner_fold]
