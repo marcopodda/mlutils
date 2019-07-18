@@ -44,51 +44,29 @@ DEFAULTS = {
                 'gamma': 0.5,
                 'step_size': 30
             },
+        },
+        'gradient_clipper': {
+            'func': 'torch.nn.utils.clip_grad.clip_grad_norm_',
+            'args': {'max_norm': 1.0}
+        },
+    },
+    'monitor': {
+        'training': ['model_loss', 'binary_accuracy'],
+        'validation': ['model_loss', 'binary_accuracy'],
+        'test': ['binary_accuracy']
+    },
+    'early_stopping': {
+        'class_name': 'core.early_stopping.PatienceEarlyStopper',
+        'params': {
+            'patience': 30,
+            'metric': 'binary_accuracy',
+            'phase': 'validation'
         }
     },
-    'event_handlers': [
-        {
-            'class_name': 'core.loggers.TrainingLossLogger',
-            'params': {}
-        },
-        {
-            'class_name': 'core.loggers.ValidationLossLogger',
-            'params': {}
-        },
-        {
-            'class_name': 'core.loggers.TestLossLogger',
-            'params': {}
-        },
-        {
-            'class_name': 'core.gradient_clipping.GradientClipper',
-            'params': {
-                'func': 'torch.nn.utils.clip_grad.clip_grad_norm_',
-                'args': {
-                    'max_norm': 1.0
-                }
-            }
-        }
-    ],
-    'metrics': [
-        {
-            'class_name': 'core.loggers.TrainingMetricLogger',
-            'params': {
-                'metrics': ['core.metrics.BinaryAccuracy']
-            }
-        },
-        {
-            'class_name': 'core.loggers.ValidationMetricLogger',
-            'params': {
-                'metrics': ['core.metrics.BinaryAccuracy']
-            }
-        },
-        {
-            'class_name': 'core.loggers.TestMetricLogger',
-            'params': {
-                'metrics': ['core.metrics.BinaryAccuracy']
-            }
-        },
-    ]
+    'saver': {
+        'phase': 'training',
+        'metric': 'model_loss'
+    }
 }
 
 

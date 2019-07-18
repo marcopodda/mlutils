@@ -87,7 +87,9 @@ class EventHandler:
 class State:
     def __init__(self, **values):
         self.update(**values)
-        self.stop_training = False
+
+    def __getitem__(self, name):
+        return getattr(self, name)
 
     def update(self, **values):
         for name, value in values.items():
