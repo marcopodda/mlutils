@@ -5,6 +5,7 @@ from utils.training import get_device
 
 from .events import EventDispatcher, State
 from .optimizer import Optimizer
+from .logger import Logger
 from .monitor import Monitor
 from .timer import Timer
 
@@ -38,10 +39,13 @@ class Engine(EventDispatcher):
 
         # callbacks
         self.register(Optimizer(config, self.state.model))
+
         if 'monitor' in config:
             self.register(Monitor(config))
+
         if 'timer' in config:
             self.register(Timer())
+
 
         self.save_path = save_path
 

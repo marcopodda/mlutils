@@ -8,24 +8,23 @@ class Monitor(EventHandler):
         self.early_stopper = None
         self.saver = None
 
-        if 'monitor' in config:
-            monitor_config = config.get('monitor')
+        monitor_config = config.get('monitor')
 
-            if 'metrics' in monitor_config:
-                metric_configs = monitor_config.get('metrics')
-                for metric_config in metric_configs:
-                    metric = dynamic_class_load(metric_config)
-                    self.metrics.append(metric)
+        if 'metrics' in monitor_config:
+            metric_configs = monitor_config.get('metrics')
+            for metric_config in metric_configs:
+                metric = dynamic_class_load(metric_config)
+                self.metrics.append(metric)
 
-                if 'early_stopper' in monitor_config:
-                    metric = self.get_early_stopper_metric()
-                    early_stopper_config = monitor_config.get('early_stopper')
-                    self.early_stopper = dynamic_class_load(early_stopper_config, metric)
+            if 'early_stopper' in monitor_config:
+                metric = self.get_early_stopper_metric()
+                early_stopper_config = monitor_config.get('early_stopper')
+                self.early_stopper = dynamic_class_load(early_stopper_config, metric)
 
-                if 'saver' in monitor_config:
-                    metric = self.get_save_best_metric()
-                    saver_config = monitor_config.get('saver')
-                    self.saver = dynamic_class_load(saver_config, metric)
+            if 'saver' in monitor_config:
+                metric = self.get_save_best_metric()
+                saver_config = monitor_config.get('saver')
+                self.saver = dynamic_class_load(saver_config, metric)
 
     def get_early_stopper_metric(self):
         return self.metrics[0]
@@ -96,6 +95,12 @@ class Monitor(EventHandler):
 
         if 'saver' in monitor_state_dict:
             self.saver.load_state_dict(monitor_state_dict['saver'])
+
+    def on_fit_start(self, state):
+        pass
+
+    def on_epoch_end(self, state):
+        pass
 
 
 

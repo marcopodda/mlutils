@@ -60,6 +60,9 @@ class Metric:
     def load_state_dict(self, state_dict):
         self.__dict__ = state_dict
 
+    def value(self, phase):
+        return self.data[phase]['values'][-1]
+
 
 class Loss(Metric):
     greater_is_better = False

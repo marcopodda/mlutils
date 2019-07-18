@@ -81,7 +81,12 @@ DEFAULTS = {
             'params': {}
         }
     },
-    'timer': True
+    'timer': True,
+    'logger': {
+        'log_training': True,
+        'log_evaluation': True,
+        'log_events': True
+    }
 }
 
 
