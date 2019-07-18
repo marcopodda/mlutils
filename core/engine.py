@@ -123,7 +123,6 @@ class Engine(EventDispatcher):
 
         filename = 'best.pt' if best else 'last.pt'
         torch.save(state_dict, path / filename)
-        print(state_dict['timer'])
 
     def load(self, path, best=False):
         filename = 'best.pt' if best else 'last.pt'
