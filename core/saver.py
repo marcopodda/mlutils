@@ -1,20 +1,14 @@
-from .events import EventHandler
+class ModelSaver:
+    def __init__(self, metric):
+        self.metric = metric
 
+    def check_for_save(self, phase, state):
+        if phase == self.metric.save_best_on:
+            data = self.metric.get_data(phase)
+            state.update(save_best=data['is_best'])
 
-class Saver(EventHandler):
-    def __init__(self, config):
-        self.phase = config.phase
-        self.metric = config.metric
+    def state_dict(self):
+        return self.__dict__
 
-    def _on_epoch_end(self, phase, state):
-        print(state.__dict__)
-        if phase == self.phase:
-            is_best = state[f"{self.phase}_{self.metric}"]['is_best']
-            state.update(save_best=is_best is True)
-
-
-    def on_validation_epoch_end(self, state):
-        return self._on_epoch_end('validation', state)
-
-    def on_training_epoch_end(self, state):
-        return self._on_epoch_end('training', state)
+    def load_state_dict(self, state_dict):
+        self.__dict__ = state_dict

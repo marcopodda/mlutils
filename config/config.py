@@ -46,8 +46,11 @@ DEFAULTS = {
             },
         },
         'gradient_clipper': {
-            'func': 'torch.nn.utils.clip_grad.clip_grad_norm_',
-            'args': {'max_norm': 1.0}
+            'class_name': 'core.optimizer.GradientClipper',
+            'params': {
+                'func': 'torch.nn.utils.clip_grad.clip_grad_norm_',
+                'args': {'max_norm': 1.0}
+            }
         },
     },
     'monitor': {
@@ -66,6 +69,34 @@ DEFAULTS = {
     'saver': {
         'phase': 'training',
         'metric': 'model_loss'
+    },
+    'monitor': {
+        'metrics': [
+            {
+                'class_name': 'core.metrics.Loss',
+                'params': {
+                    'monitor_on': ['training', 'validation'],
+                    'early_stopping_on': 'validation',
+                    'save_best_on': 'validation'
+                },
+            },
+            {
+                'class_name': 'core.metrics.BinaryAccuracy',
+                'params': {
+                    'monitor_on': ['training', 'validation', 'test'],
+                    'early_stopping_on': None,
+                    'save_best_on': None
+                }
+            }
+        ],
+        'early_stopper': {
+            'class_name': 'core.early_stopping.PatienceEarlyStopper',
+            'params': {'patience': 30}
+        },
+        'saver': {
+            'class_name': 'core.saver.ModelSaver',
+            'params': {}
+        }
     }
 }
 
@@ -94,7 +125,7 @@ class Config(LoadMixin):
         return getattr(self, name)
 
     def __contains__(self, name):
-        return name in self.__dict__
+        return name in self.__dict__ and self.__dict__[name] not in [None, {}, []]
 
     def get(self, *keys):
         config_dict = self.__dict__.copy()

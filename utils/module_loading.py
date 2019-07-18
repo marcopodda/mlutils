@@ -24,39 +24,8 @@ def import_string(dotted_path):
         ) from err
 
 
-def module_has_submodule(package, module_name):
-    """See if 'module' is in 'package'."""
-    try:
-        package_name = package.__name__
-        package_path = package.__path__
-    except AttributeError:
-        # package isn't a package.
-        return False
-
-    full_module_name = package_name + '.' + module_name
-    try:
-        return importlib_find(full_module_name, package_path) is not None
-    except (ImportError, AttributeError):
-        # When module_name is an invalid dotted path, Python raises ImportError
-        # (or ModuleNotFoundError in Python 3.6+). AttributeError may be raised
-        # if the penultimate part of the path is not a package.
-        # (https://bugs.python.org/issue30436)
-        return False
-
-
-def module_dir(module):
-    """
-    Find the name of the directory that contains a module, if possible.
-
-    Raise ValueError otherwise, e.g. for namespace packages that are split
-    over several directories.
-    """
-    # Convert to list because _NamespacePath does not support indexing on 3.3.
-    paths = list(getattr(module, '__path__', []))
-    if len(paths) == 1:
-        return paths[0]
-    else:
-        filename = getattr(module, '__file__', None)
-        if filename is not None:
-            return os.path.dirname(filename)
-    raise ValueError("Cannot determine directory containing %s" % module)
+def dynamic_class_load(obj_config, main_param=None):
+    obj_class = import_string(obj_config.class_name)
+    if main_param is not None:
+        return obj_class(main_param, **obj_config.params)
+    return obj_class(**obj_config.params)

@@ -91,6 +91,9 @@ class State:
     def __getitem__(self, name):
         return getattr(self, name)
 
+    def __contains__(self, name):
+        return name in self.__dict__
+
     def update(self, **values):
         for name, value in values.items():
             setattr(self, name, value)
@@ -104,12 +107,12 @@ class State:
         for key, obj in state_dict.items():
             if hasattr(obj, 'state_dict'):
                 state_dict[key] = obj.state_dict()
-        return state_dict
+        return {'state': state_dict}
 
-    def load(self, path):
-        state_dict = torch.load(path)
-        for key, obj in state_dict.items():
-            if hasattr(self, 'load_state_dict'):
-                self.update(key=obj.load_state_dict())
+    def load_state_dict(self, state_dict):
+        state_dict = state_dict['state']
+        for key, state in state_dict.items():
+            if state is not None and key in self and hasattr(self[key], 'load_state_dict'):
+                self[key].load_state_dict(state)
             else:
-                self.update(key=obj)
+                self.update(**{key: state})

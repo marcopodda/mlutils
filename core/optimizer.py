@@ -1,26 +1,34 @@
 import torch
 
-from utils.module_loading import import_string
+from utils.module_loading import dynamic_class_load
 from .events import EventHandler
+
+
+class GradientClipper:
+    def __init__(self, func, args):
+        self.func = func
+        self.args = args
+
+    def clip_gradients(self, parameters):
+        self.func(parameters, **self.args)
 
 
 class Optimizer(EventHandler):
     def __init__(self, config, model):
-        opt_class = import_string(config.class_name)
-        self.optimizer = opt_class(model.parameters(), **config.params)
+        self.config = config
+
+        opt_config = self.config.get('optimizer')
+        self.optimizer = dynamic_class_load(opt_config, model.parameters())
 
         self.scheduler = None
-        sched_config = config.get('scheduler')
-        if sched_config != {}:
-            sched_class = import_string(sched_config.class_name)
-            self.scheduler = sched_class(self.optimizer, **sched_config.params)
+        if 'scheduler' in config:
+            sched_config = self.config.get('optimizer', 'scheduler')
+            self.scheduler = dynamic_class_load(sched_config, self.optimizer)
 
-        self.grad_clipper = None
-        grad_clipper_config = config.get('gradient_clipper')
-        if grad_clipper_config != {}:
-            self.grad_clipper = import_string(grad_clipper_config.func)
-            self.grad_clipper_args = grad_clipper_config.args
-
+        self.gradient_clipper = None
+        if 'gradient_clipper' in config:
+            grad_clip_config = self.config.get('optimizer', 'gradient_clipper')
+            self.gradient_clipper = dynamic_class_load(grad_clip_config)
 
     def on_training_epoch_start(self, state):
         if self.scheduler is not None:
@@ -33,16 +41,17 @@ class Optimizer(EventHandler):
         self.optimizer.step()
 
     def on_backward(self, state):
-        if self.grad_clipper is not None:
-            self.grad_clipper(state.model.parameters(), **self.grad_clipper_args)
+        if self.gradient_clipper is not None:
+            self.gradient_clipper.clip_gradients(state.model.parameters())
 
     def state_dict(self):
         state_dict = {'optimizer': self.optimizer.state_dict()}
         if self.scheduler is not None:
             state_dict.update(scheduler=self.scheduler.state_dict())
-        return state_dict
+        return {'optimizer': state_dict}
 
     def load_state_dict(self, state_dict):
-        self.optimizer.load_state_dict(state_dict['optimizer'])
+        opt_state_dict = state_dict['optimizer']
+        self.optimizer.load_state_dict(opt_state_dict['optimizer'])
         if self.scheduler is not None:
-            self.scheduler.load_state_dict(state_dict['scheduler'])
+            self.scheduler.load_state_dict(opt_state_dict['scheduler'])

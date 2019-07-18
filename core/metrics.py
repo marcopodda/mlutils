@@ -2,100 +2,106 @@ import operator
 import numpy as np
 
 import torch
-from torch.nn import functional as F
 
 from sklearn import metrics
 
-from .events import EventHandler
+
+class Metric:
+    def __init__(self, monitor_on=['training', 'validation', 'test'],
+                       early_stopping_on='validation',
+                       save_best_on='validation'):
+        assert hasattr(self, 'greater_is_better')
+
+        self.monitor_on = monitor_on
+        self.early_stopping_on = early_stopping_on
+        self.save_best_on = save_best_on
+
+        self.data = {}
+        for phase in self.monitor_on:
+            best = -np.float('inf') if self.greater_is_better else np.float('inf')
+            self.data.update({
+                phase: {
+                    'best': best,
+                    'is_best': False,
+                    'best_epoch': 0,
+                    'current': None,
+                    'values': []
+                }
+            })
+
+    @classmethod
+    def op(cls, value, best_value):
+        if cls.greater_is_better:
+            return operator.gt(value, best_value)
+        return operator.lt(value, best_value)
+
+    def _update(self, phase, value):
+        if phase in self.monitor_on:
+            self.data[phase]['current'] = value
+            self.data[phase]['values'].append(value)
+
+            if self.op(value, self.data[phase]['best']):
+                current_epoch = len(self.data[phase]['values'])
+                self.data[phase]['best'] = value
+                self.data[phase]['is_best'] = True
+                self.data[phase]['best_epoch'] = current_epoch
+            else:
+                self.data[phase]['is_best'] = False
+
+    def update(self, phase, state):
+        raise NotImplementedError
+
+    def get_data(self, phase):
+        return self.data[phase]
+
+    def state_dict(self):
+        return self.__dict__
+
+    def load_state_dict(self, state_dict):
+        self.__dict__ = state_dict
 
 
-class BaseMetric:
-    def __init__(self):
-        self.values = []
-        self.best = -np.float('inf') if self.greater_is_better else np.float('inf')
-        self.best_epoch = 0
-        self.op = operator.gt if self.greater_is_better else operator.lt
-
-    def epoch_start(self, state):
-        pass
-
-    def epoch_end(self, state):
-        pass
-
-    def batch_start(self, state):
-        pass
-
-    def batch_end(self, state):
-        pass
-
-    def epoch_end(self, state):
-        pass
-
-    def _update(self, value):
-        self.values.append(value)
-
-        if self.op(value, self.best):
-            self.best = value
-            self.best_epoch = self.values.index(self.best)
-
-        return {
-            'is_best': self.best_epoch == len(self.values) - 1,
-            'best': self.best,
-            'best_epoch': self.best_epoch,
-            'current': self.values[-1]
-        }
-
-    def to_dict(self):
-        return {
-            'values': self.values,
-            'best': self.best,
-            'best_epoch': self.best_epoch
-        }
-
-    def from_dict(self, state_dict):
-        self.values = state_dict['values']
-        self.best = state_dict['best']
-        self.best_epoch = state_dict['best_epoch']
-
-
-class ModelLoss(BaseMetric):
+class Loss(Metric):
     greater_is_better = False
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, monitor_on=['training', 'validation', 'test'],
+                       early_stopping_on='validation',
+                       save_best_on='validation'):
+        super().__init__(monitor_on=monitor_on)
+
         self.batch_losses = []
 
-    def batch_start(self, state):
-        self.batch_losses = []
-
-    def batch_end(self, state):
+    def update_batch_data(self, state):
         loss = state.loss.item()
         self.batch_losses.append(loss)
 
-    def epoch_end(self, state):
+    def reset_batch_data(self):
+        self.batch_losses = []
+
+    def update(self, phase):
         epoch_loss = sum(self.batch_losses) / len(self.batch_losses)
-        return self._update(value=epoch_loss)
+        return self._update(phase, value=epoch_loss)
 
 
+class PerformanceMetric(Metric):
+    def __init__(self, monitor_on=['training', 'validation', 'test'],
+                       early_stopping_on='validation',
+                       save_best_on='validation'):
+        super().__init__(monitor_on=monitor_on)
+        assert hasattr(self, 'metric_fun')
 
-class Metric(BaseMetric):
-    def __init__(self):
-        super().__init__()
         self.outputs = []
         self.targets = []
 
-    def _prepare_data(self, outputs, targets):
-        raise NotImplementedError
-
-    def epoch_start(self, state):
-        self.outputs = []
-        self.targets = []
-
-    def batch_end(self, state):
+    def update_batch_data(self, state):
         self.outputs.append(state.outputs.detach())
         self.targets.append(state.targets.detach())
 
-    def epoch_end(self, state):
+    def reset_batch_data(self):
+        self.outputs = []
+        self.targets = []
+
+    def update(self, phase):
         outputs = torch.cat(self.outputs)
         targets = torch.cat(self.targets)
 
@@ -105,30 +111,24 @@ class Metric(BaseMetric):
             outputs = outputs.squeeze(-1)
 
         outputs, targets = self._prepare_data(outputs, targets)
-        value = self.fun(targets, outputs)
-        return self._update(value=value)
+        value = self.metric_fun(targets, outputs)
+        return self._update(phase, value=value)
+
+    def _prepare_data(self, outputs, targets):
+        raise NotImplementedError
 
 
-class BinaryAccuracy(Metric):
-    fun = staticmethod(metrics.accuracy_score)
+class BinaryAccuracy(PerformanceMetric):
     greater_is_better = True
+    metric_fun = staticmethod(metrics.accuracy_score)
 
     def _prepare_data(self, outputs, targets):
         outputs = torch.sigmoid(outputs)
         return (outputs > 0.5).numpy(), (targets == 1).numpy()
 
 
-class MulticlassAccuracy(Metric):
-    fun = staticmethod(metrics.accuracy_score)
-    greater_is_better = True
-
-    def _prepare_data(self, outputs, targets):
-        outputs = F.softmax(outputs, dim=-1)
-        return outputs.argmax().numpy(), targets.numpy()
-
-
-class MSE(Metric):
-    fun = staticmethod(metrics.mean_squared_error)
+class MSE(PerformanceMetric):
+    metric_fun = staticmethod(metrics.mean_squared_error)
     greater_is_better = False
 
     def _prepare_data(self, outputs, targets):

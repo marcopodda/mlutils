@@ -1,8 +1,7 @@
 import torch
 
 from core.optimizer import Optimizer
-from core.monitors import Monitor
-from core.saver import Saver
+from core.monitor import Monitor
 from utils.module_loading import import_string
 from utils.training import get_device
 
@@ -16,6 +15,7 @@ def build_model(config, dim_input, dim_target):
     device = get_device(config)
     return model.to(device)
 
+
 def build_criterion(config):
     criterion_config = config.get('criterion')
     criterion_class = import_string(criterion_config.class_name)
@@ -25,7 +25,7 @@ def build_criterion(config):
 
 
 class Engine(EventDispatcher):
-    def __init__(self, config, dim_input, dim_target, load_path=None, save_path=None, best=False):
+    def __init__(self, config, dim_input, dim_target, save_path):
         super().__init__()
         self.config = config
 
@@ -33,39 +33,23 @@ class Engine(EventDispatcher):
             model=build_model(config, dim_input, dim_target),
             criterion=build_criterion(config),
             stop_training=False,
-            epoch=0)
+            save_best=False)
 
         # optimizer
-        self.register(Optimizer(config.get('optimizer'), self.state.model))
-        self.register(Monitor(config.get('monitor')))
-        self.register(Saver(config.get('saver')))
-
-        # gradient clipping
-        if 'gradient_clipping' in config:
-            grad_clip_config = config.get('gradient_clipping')
-            grad_clip_class = import_string(grad_clip_config.class_name)
-            grad_clipper = grad_clip_class(**grad_clip_config.params)
-            self.register(grad_clipper)
-
-        # early stopping
-        if 'early_stopping' in config:
-            early_stopper_config = config.get('early_stopping')
-            early_stopper_class = import_string(early_stopper_config.class_name)
-            early_stopper = early_stopper_class(**early_stopper_config.params)
-            self.register(early_stopper)
-
-        if load_path is not None:
-            filename = 'best.pt' if best else 'last.pt'
-            self.state.load(load_path / filename)
+        self.register(Optimizer(config, self.state.model))
+        self.register(Monitor(config))
 
         self.save_path = save_path
 
-    def fit(self, train_loader, val_loader=None, max_epochs=None):
+    def fit(self, train_loader, val_loader=None, num_epochs=None):
         self._dispatch('on_fit_start', self.state)
 
-        max_epochs = max_epochs or self.config.max_epochs
-        for epoch in range(self.state.epoch, max_epochs):
+        start_epoch = self.state.epoch + 1 if 'epoch' in self.state else 0
+        num_epochs = num_epochs or self.config.max_epochs
+
+        for epoch in range(start_epoch, start_epoch + num_epochs):
             self.state.update(epoch=epoch)
+            print(epoch)
             self._dispatch('on_epoch_start', self.state)
 
             self.state.model.train()
@@ -87,6 +71,7 @@ class Engine(EventDispatcher):
 
             if self.save_path is not None:
                 if self.state.save_best:
+                    print(f'Saving best model at epoch {epoch}.')
                     self.save(self.save_path, best=True)
                 self.save(self.save_path, best=False)
 
@@ -111,6 +96,8 @@ class Engine(EventDispatcher):
             self._dispatch('on_validation_batch_end', self.state)
 
     def evaluate(self, test_loader):
+        self.load(self.save_path, best=True)
+
         self._dispatch('on_test_start', self.state)
         for idx, batch in enumerate(test_loader):
             self._dispatch('on_test_batch_start', self.state)
@@ -128,3 +115,11 @@ class Engine(EventDispatcher):
 
         filename = 'best.pt' if best else 'last.pt'
         torch.save(state_dict, path / filename)
+
+    def load(self, path, best=False):
+        filename = 'best.pt' if best else 'last.pt'
+        state_dict = torch.load(path / filename)
+        self.state.load_state_dict(state_dict)
+
+        for event_handler in self._event_handlers:
+            event_handler.load_state_dict(state_dict)

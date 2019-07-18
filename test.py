@@ -39,8 +39,10 @@ if __name__ == "__main__":
     test_loader = datamanager.get_loader('test')
 
     engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('ckpts'))
-    engine.fit(train_loader, val_loader, max_epochs=150)
-    engine.evaluate(test_loader)
-    engine.save(Path('ckpts'))
+    engine.fit(train_loader, val_loader, num_epochs=10)
 
+    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('ckpts'))
+    engine.load(Path('ckpts'))
+    engine.fit(train_loader, val_loader, num_epochs=5)
+    engine.evaluate(test_loader)
 
