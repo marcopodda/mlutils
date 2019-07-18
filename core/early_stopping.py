@@ -18,7 +18,7 @@ class EarlyStopper:
         raise NotImplementedError
 
     def state_dict(self):
-        return self.__dict__
+        return self.__dict__.copy()
 
     def load_state_dict(self, state_dict):
         self.__dict__ = state_dict

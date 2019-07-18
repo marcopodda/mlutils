@@ -54,23 +54,6 @@ DEFAULTS = {
         },
     },
     'monitor': {
-        'training': ['model_loss', 'binary_accuracy'],
-        'validation': ['model_loss', 'binary_accuracy'],
-        'test': ['binary_accuracy']
-    },
-    'early_stopping': {
-        'class_name': 'core.early_stopping.PatienceEarlyStopper',
-        'params': {
-            'patience': 30,
-            'metric': 'binary_accuracy',
-            'phase': 'validation'
-        }
-    },
-    'saver': {
-        'phase': 'training',
-        'metric': 'model_loss'
-    },
-    'monitor': {
         'metrics': [
             {
                 'class_name': 'core.metrics.Loss',
@@ -97,7 +80,8 @@ DEFAULTS = {
             'class_name': 'core.saver.ModelSaver',
             'params': {}
         }
-    }
+    },
+    'timer': True
 }
 
 

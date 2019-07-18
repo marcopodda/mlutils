@@ -1,11 +1,12 @@
 import torch
 
-from core.optimizer import Optimizer
-from core.monitor import Monitor
 from utils.module_loading import import_string
 from utils.training import get_device
 
 from .events import EventDispatcher, State
+from .optimizer import Optimizer
+from .monitor import Monitor
+from .timer import Timer
 
 
 def build_model(config, dim_input, dim_target):
@@ -35,9 +36,12 @@ class Engine(EventDispatcher):
             stop_training=False,
             save_best=False)
 
-        # optimizer
+        # callbacks
         self.register(Optimizer(config, self.state.model))
-        self.register(Monitor(config))
+        if 'monitor' in config:
+            self.register(Monitor(config))
+        if 'timer' in config:
+            self.register(Timer())
 
         self.save_path = save_path
 
@@ -76,6 +80,7 @@ class Engine(EventDispatcher):
                 self.save(self.save_path, best=False)
 
         self._dispatch('on_fit_end', self.state)
+        self.save(self.save_path, best=False)
 
     def _train_one_epoch(self, loader):
         for idx, batch in enumerate(loader):
@@ -96,7 +101,10 @@ class Engine(EventDispatcher):
             self._dispatch('on_validation_batch_end', self.state)
 
     def evaluate(self, test_loader):
-        self.load(self.save_path, best=True)
+        try:
+            self.load(self.save_path, best=True)
+        except FileNotFoundError:
+            self.load(self.save_path, best=False)
 
         self._dispatch('on_test_start', self.state)
         for idx, batch in enumerate(test_loader):
@@ -115,6 +123,7 @@ class Engine(EventDispatcher):
 
         filename = 'best.pt' if best else 'last.pt'
         torch.save(state_dict, path / filename)
+        print(state_dict['timer'])
 
     def load(self, path, best=False):
         filename = 'best.pt' if best else 'last.pt'
