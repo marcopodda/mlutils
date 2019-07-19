@@ -1,6 +1,6 @@
 import torch
 
-from utils.module_loading import import_string
+from utils.module_loading import load_class
 from utils.training import get_device
 
 from .events import EventDispatcher
@@ -12,20 +12,6 @@ from .loggers import CSVLogger
 from pathlib import Path
 
 
-def build_model(config, dim_input, dim_target):
-    model_config = config.get('model')
-    model_class = import_string(model_config.class_name)
-    model = model_class(dim_input, dim_target, **model_config.params)
-    return model
-
-
-def build_criterion(config):
-    criterion_config = config.get('criterion')
-    criterion_class = import_string(criterion_config.class_name)
-    criterion = criterion_class(**criterion_config.params)
-    return criterion
-
-
 class Engine(EventDispatcher):
     def __init__(self, config, dim_input, dim_target, save_path):
         super().__init__()
@@ -33,17 +19,40 @@ class Engine(EventDispatcher):
         self.default_device = get_device(config)
 
         self.state = State(
-            model=build_model(config, dim_input, dim_target),
-            criterion=build_criterion(config))
+            model=load_class(config.get('model'), dim_input=dim_input, dim_target=dim_target),
+            criterion=load_class(config.get('criterion')))
 
         # callbacks
-        self.register(Optimizer(config, self.model))
+        self.register(Optimizer(config.get('optimizer'), self.model))
 
-        if 'monitor' in config:
-            self.register(Monitor(config))
+        # metrics
+        additional_metrics = []
+        if 'callbacks' in config:
+            callback_configs = config.get('callbacks')
+            if 'metrics' in callback_configs:
+                metrics_config = callback_configs.get('metrics')
+                for metric_config in metrics_config:
+                    metric = load_class(metric_config)
+                    additional_metrics.append(metric)
+        self.register(Monitor(additional_metrics))
 
-        if 'logger' in config:
-            self.register(CSVLogger())
+        if 'callbacks' in config:
+            callback_configs = config.get('callbacks')
+            if 'early_stopper' in callback_configs:
+                early_stopper_config = callback_configs.get('early_stopper')
+                early_stopper = load_class(early_stopper_config)
+                self.register(early_stopper)
+
+            if 'model_saver' in callback_configs:
+                model_saver_config = callback_configs.get('model_saver')
+                model_saver = load_class(model_saver_config)
+                self.register(model_saver)
+
+            if 'loggers' in callback_configs:
+                loggers_config = callback_configs.get('loggers')
+                for logger_config in loggers_config:
+                    logger = load_class(logger_config)
+                    self.register(logger)
 
         self.save_path = save_path
 
@@ -78,13 +87,18 @@ class Engine(EventDispatcher):
     def fit(self, train_loader, val_loader=None, num_epochs=None, train_device=None, val_device=None):
         self._dispatch('on_fit_start', self.state)
 
-        start_epoch = self.state.epoch + 1 if 'epoch' in self.state else 0
+        start_epoch = self.state.epoch
         num_epochs = num_epochs or self.config.max_epochs
+        print(f'Start training at epoch: {self.state.epoch}')
 
         for epoch in range(start_epoch, start_epoch + num_epochs):
             self.state.update(epoch=epoch)
 
-            self.state.init_epoch_results()
+            if self.state.stop_training is True:
+                print(f"Early stopping - epoch {self.state.epoch-1}")
+                print(self.state.best_results)
+                break
+
             self._dispatch('on_epoch_start', self.state)
 
             self.set_training_mode()
@@ -116,7 +130,6 @@ class Engine(EventDispatcher):
         self.set_test_mode()
         self.set_device(test_device)
 
-        self.state.init_epoch_results()
         self._dispatch('on_test_epoch_start', self.state)
         self._evaluate_epoch(test_loader)
         self._dispatch('on_test_epoch_end', self.state)
@@ -143,18 +156,6 @@ class Engine(EventDispatcher):
     def feed_forward_batch(self, batch):
         raise NotImplementedError
 
-    def save(self, path, best=False):
-        state_dict = self.state.state_dict()
-        for event_handler in self._event_handlers:
-            state_dict.update(event_handler.state_dict())
-
-        filename = 'best.pt' if best else 'last.pt'
-        torch.save(state_dict, path / filename)
-
     def load(self, path, best=False):
         filename = 'best.pt' if best else 'last.pt'
-        state_dict = torch.load(path / filename)
-        self.state.load_state_dict(state_dict)
-
-        for event_handler in self._event_handlers:
-            event_handler.load_state_dict(state_dict)
+        self.state.load(path / filename)

@@ -16,7 +16,7 @@ class Manager(DataManager):
         pass
 
     def _process_data(self, processed_dir):
-        X, Y = make_classification(n_samples=10000, n_features=100, n_informative=2, n_redundant=90, n_repeated=2, n_classes=2)
+        X, Y = make_classification(n_samples=10000, n_features=2, n_informative=2, n_redundant=0, n_repeated=0, n_classes=2)
         data = RandomDataset(np.hstack([X, Y.reshape(-1, 1)]))
         torch.save(data, processed_dir / "dataset.pt")
 
@@ -39,10 +39,10 @@ if __name__ == "__main__":
     test_loader = datamanager.get_loader('test')
 
     engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('ckpts'))
-    engine.fit(train_loader, val_loader, num_epochs=10)
+    engine.fit(train_loader, val_loader, num_epochs=15)
 
     engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('ckpts'))
-    engine.load(Path('ckpts'))
+    engine.load(Path('ckpts'), best=False)
     engine.fit(train_loader, val_loader, num_epochs=5)
     engine.evaluate(test_loader)
 

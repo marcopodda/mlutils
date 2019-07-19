@@ -1,12 +1,12 @@
 import torch
 
-from utils.module_loading import load_class
+from utils.module_loading import load_class, import_string
 from .events import EventHandler
 
 
 class GradientClipper:
     def __init__(self, func, args):
-        self.func = func
+        self.func = import_string(func)
         self.args = args
 
     def clip_gradients(self, parameters):
@@ -15,20 +15,25 @@ class GradientClipper:
 
 class Optimizer(EventHandler):
     def __init__(self, config, model):
-        self.config = config
-
-        opt_config = self.config.get('optimizer')
-        self.optimizer = load_class(opt_config, model.parameters())
+        self.optimizer = load_class(config, params=model.parameters())
+        self.model = model
 
         self.scheduler = None
         if 'scheduler' in config:
-            sched_config = self.config.get('optimizer', 'scheduler')
-            self.scheduler = load_class(sched_config, self.optimizer)
+            sched_config = config.get('scheduler')
+            self.scheduler = load_class(sched_config, optimizer=self.optimizer)
 
         self.gradient_clipper = None
         if 'gradient_clipper' in config:
-            grad_clip_config = self.config.get('optimizer', 'gradient_clipper')
+            grad_clip_config = config.get('gradient_clipper')
             self.gradient_clipper = load_class(grad_clip_config)
+
+    def on_fit_start(self, state):
+        if 'optimizer_state' in state:
+            self.optimizer.load_state_dict(state.optimizer_state)
+
+        if self.scheduler and 'scheduler_state' in state:
+            self.scheduler.load_state_dict(state.scheduler_state)
 
     def on_training_epoch_start(self, state):
         if self.scheduler is not None:
@@ -42,16 +47,9 @@ class Optimizer(EventHandler):
 
     def on_backward(self, state):
         if self.gradient_clipper is not None:
-            self.gradient_clipper.clip_gradients(state.model.parameters())
+            self.gradient_clipper.clip_gradients(self.model.parameters())
 
-    def state_dict(self):
-        state_dict = {'optimizer': self.optimizer.state_dict()}
-        if self.scheduler is not None:
-            state_dict.update(scheduler=self.scheduler.state_dict())
-        return {'optimizer': state_dict}
-
-    def load_state_dict(self, state_dict):
-        opt_state_dict = state_dict['optimizer']
-        self.optimizer.load_state_dict(opt_state_dict['optimizer'])
-        if self.scheduler is not None:
-            self.scheduler.load_state_dict(opt_state_dict['scheduler'])
+    def on_epoch_end(self, state):
+        state.update(optimizer_state=self.optimizer.state_dict())
+        if self.scheduler:
+            state.update(scheduler_state=self.scheduler.state_dict())

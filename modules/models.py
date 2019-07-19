@@ -3,7 +3,7 @@ from torch.nn import functional as F
 
 
 class MLP(nn.Module):
-    def __init__(self, dim_input, dim_target, **params):
+    def __init__(self, dim_input=10, dim_target=2, **params):
         super().__init__()
         self.dim_input = dim_input
         self.dim_layers = params['dim_layers']

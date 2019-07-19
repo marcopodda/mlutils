@@ -13,7 +13,7 @@ DEFAULTS = {
     'model': {
         'class_name': 'modules.models.MLP',
         'params': {
-            'dim_layers': [256, 128]
+            'dim_layers': [128, 64]
         }
     },
     'criterion': {
@@ -39,12 +39,11 @@ DEFAULTS = {
         'class_name': 'torch.optim.Adam',
         'params': {'lr': 0.001},
     },
-    'callbacks': [
-        'accuracy',
-        'logger'
-    ],
-    'monitor': [],
-    'logger': False
+    'callbacks': {
+        'metrics': [
+            {'class_name': 'core.metrics.BinaryAccuracy'}
+        ]
+    }
 }
 
 TEST_CONFIG = {
@@ -52,27 +51,16 @@ TEST_CONFIG = {
     'device': 'cpu',
     'model': {
         'class_name': 'modules.models.MLP',
-        'params': {
-            'dim_layers': [256, 128]
-        }
+        'params': {'dim_layers': [128, 64]}
     },
-    'criterion': {
-        'class_name': 'modules.criterions.BCE',
-        'params': {}
-    },
+    'criterion': {'class_name': 'modules.criterions.BCE'},
     'data': {
         'root': 'DATA',
         'name': 'random',
-        'splitter': {
-            'class_name': 'data.splitters.HoldoutSplitter',
-            'params': {}
-        },
+        'splitter': {'class_name': 'data.splitters.HoldoutSplitter'},
         'loader': {
             'class_name': 'torch.utils.data.DataLoader',
-            'params': {
-                'batch_size': 32,
-                'shuffle': True
-            }
+            'params': {'batch_size': 32, 'shuffle': True}
         }
     },
     'optimizer': {
@@ -80,10 +68,7 @@ TEST_CONFIG = {
         'params': {'lr': 0.001},
         'scheduler': {
             'class_name': 'torch.optim.lr_scheduler.StepLR',
-            'params': {
-                'gamma': 0.5,
-                'step_size': 30
-            },
+            'params': {'gamma': 0.5, 'step_size': 30},
         },
         'gradient_clipper': {
             'class_name': 'core.optimizer.GradientClipper',
@@ -93,16 +78,18 @@ TEST_CONFIG = {
             }
         },
     },
-    # 'callbacks': {
-    #     'metrics': [
-    #         'core.metrics.BinaryAccuracy',
-    #         'core.metrics.MSE',
-    #     ],
-    #     'loggers': [
-    #         'csv',
-    #         'events'
-    #     ]
-    # }
+    'callbacks': {
+        'metrics': [
+            {'class_name': 'core.metrics.BinaryAccuracy'},
+            {'class_name': 'core.metrics.Time'}
+        ],
+        'early_stopper': {
+            'class_name': 'core.early_stopping.PatienceEarlyStopper',
+            # 'params': {'alpha': 0.2}
+        },
+        'model_saver': {'class_name': 'core.saver.ModelSaver'},
+        'loggers': [{'class_name': 'core.loggers.CSVLogger'}]
+    }
 }
 
 class ConfigError(Exception):

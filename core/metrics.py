@@ -1,4 +1,5 @@
 import time
+import operator as op
 import numpy as np
 
 import torch
@@ -8,10 +9,14 @@ from sklearn import metrics
 
 class Metric:
     def __init__(self):
-        assert hasattr(self, 'greater_is_better')
+        assert hasattr(self, 'name')
         self.training = None
         self.validation = None
         self.test = None
+
+    @property
+    def greater_is_better(self):
+        return self.operator == op.gt
 
     def _update(self, phase, value):
         setattr(self, phase, value)
@@ -19,22 +24,13 @@ class Metric:
     def update(self, state):
         raise NotImplementedError
 
-    def get_data(self, phase):
-        return self.data[phase]
-
-    def state_dict(self):
-        return self.__dict__.copy()
-
-    def load_state_dict(self, state_dict):
-        self.__dict__ = state_dict
-
-    def value(self, phase):
+    def get_value(self, phase):
         return getattr(self, phase)
 
 
 class Loss(Metric):
     name = "loss"
-    greater_is_better = False
+    operator = op.lt
 
     def __init__(self):
         super().__init__()
@@ -54,7 +50,7 @@ class Loss(Metric):
 
 class Time(Metric):
     name = "time"
-    greater_is_better = False
+    operator = op.lt
 
     def __init__(self):
         super().__init__()
@@ -75,7 +71,6 @@ class Time(Metric):
 class PerformanceMetric(Metric):
     def __init__(self):
         assert hasattr(self, 'metric_fun')
-        assert hasattr(self, 'name')
         super().__init__()
 
         self.outputs = []
@@ -108,8 +103,8 @@ class PerformanceMetric(Metric):
 
 class BinaryAccuracy(PerformanceMetric):
     name = "accuracy"
-    greater_is_better = True
     metric_fun = staticmethod(metrics.accuracy_score)
+    operator = op.gt
 
     def _prepare_data(self, outputs, targets):
         outputs = torch.sigmoid(outputs)
@@ -119,7 +114,7 @@ class BinaryAccuracy(PerformanceMetric):
 class MSE(PerformanceMetric):
     name = "mse"
     metric_fun = staticmethod(metrics.mean_squared_error)
-    greater_is_better = False
+    operator = op.lt
 
     def _prepare_data(self, outputs, targets):
         return torch.sigmoid(outputs), targets
@@ -144,10 +139,10 @@ class MetricsList:
     def append(self, metric):
         self._metrics.append(metric)
 
-    def get_data(self, state):
+    def get_data(self, phase):
         data = {}
         for metric in self._metrics:
-            data[f"{state.phase}_{metric.name}"] = metric.value(state.phase)
+            data[f"{phase}_{metric.name}"] = metric.get_value(phase)
         return data
 
     def __getitem__(self, index):
@@ -158,10 +153,3 @@ class MetricsList:
 
     def __iter__(self):
         return iter(self._metrics)
-
-    def state_dict(self):
-        return [m.state_dict() for m in self._metrics]
-
-    def load_state_dict(self, state_dicts):
-        for metric, state_dict in zip(self._metrics, state_dicts):
-            metric.load_state_dict(state_dict)

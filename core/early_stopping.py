@@ -1,50 +1,62 @@
 import operator
 import numpy as np
 
+import operator
+
 from .events import EventHandler
 
 
-class EarlyStopper:
-    def __init__(self, metric):
-        self.metric = metric
-
-    def check_for_early_stop(self, phase, state):
-        if phase == self.metric.early_stopping_on:
-            data = self.metric.get_data(phase)
-            stop = self._stop_criterion(data)
-            state.update(stop_training=stop)
-
-    def _stop_criterion(self, state_dict):
-        raise NotImplementedError
-
-    def state_dict(self):
-        return self.__dict__.copy()
-
-    def load_state_dict(self, state_dict):
-        self.__dict__ = state_dict
-
-
-class GLEarlyStopper(EarlyStopper):
-    def __init__(self, metric, alpha=5):
-        super().__init__(metric=metric)
-        self.alpha = alpha
-
-    def _stop_criterion(self, data):
-        best_value = data['best']
-        current_value = data['current']
-
-        if self.metric.greater_is_better:
-            return (best_value / current_value - 1) > self.alpha
-
-        return 100 * (current_value / best_value - 1) > self.alpha
+class EarlyStopper(EventHandler):
+    def __init__(self, monitor, mode, patience):
+        self.monitor = monitor
+        self.mode = mode
+        self.patience = patience
+        self.op = operator.lt if mode == "min" else operator.gt
 
 
 class PatienceEarlyStopper(EarlyStopper):
-    def __init__(self, metric, patience=20):
-        super().__init__(metric=metric)
+    def __init__(self, monitor="validation_loss", mode="min", patience=30):
+        super().__init__(monitor, mode, patience)
         self.patience = patience
 
-    def _stop_criterion(self, data):
-        current_epoch = len(data['values'])
-        best_epoch = data['best_epoch']
-        return current_epoch - best_epoch > self.patience
+    def on_epoch_end(self, state):
+        best_epoch = state.best_results[self.monitor]['best_epoch']
+        state.stop_training = state.epoch - best_epoch >= self.patience
+
+
+class GLEarlyStopper(EarlyStopper):
+    def __init__(self, monitor="validation_loss", mode="min", patience=10, alpha=5):
+        super().__init__(monitor, mode, patience)
+        self.alpha = alpha
+        self.count = 1
+
+    def on_epoch_end(self, state):
+        current_value = state.epoch_results[self.monitor]
+        best_value = state.best_results[self.monitor]['best']
+
+        if self.mode == 'min':
+            delta = (current_value / best_value - 1)
+        else:
+            delta = (best_value / current_value - 1) > self.alpha
+
+        self.count = 1 if delta < self.alpha else self.count + 1
+        state.stop_training = self.count >= self.patience
+
+
+class DeltaEarlyStopper(PatienceEarlyStopper):
+    def __init__(self, monitor="validation_loss", mode="min", patience=10, min_delta=1e-5):
+        super().__init__(monitor, mode, patience)
+        self.min_delta = min_delta
+        self.count = 1
+
+    def on_epoch_end(self, state):
+        current_value = state.epoch_results[self.monitor]
+        best_value = state.best_results[self.monitor]['best']
+
+        if self.op(current_value, best_value):
+            delta = np.abs(current_value - best_value)
+            self.count = 1 if delta > self.min_delta else self.count + 1
+        else:
+            self.count += 1
+
+        state.stop_training = self.count >= self.patience

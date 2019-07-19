@@ -1,14 +1,17 @@
-class ModelSaver:
-    def __init__(self, metric):
-        self.metric = metric
+from pathlib import Path
 
-    def check_for_save(self, phase, state):
-        if phase == self.metric.save_best_on:
-            data = self.metric.get_data(phase)
-            state.update(save_best=data['is_best'])
+from .events import EventHandler
 
-    def state_dict(self):
-        return self.__dict__.copy()
+class ModelSaver(EventHandler):
+    def __init__(self, path=Path('ckpts'), monitor='validation_loss'):
+        self.path = path
+        self.monitor = monitor
 
-    def load_state_dict(self, state_dict):
-        self.__dict__ = state_dict
+    def on_fit_end(self, state):
+        print(f'Saving last at epoch {state.epoch}')
+        state.save(self.path / "last.pt")
+
+    def on_epoch_end(self, state):
+        if state.best_results[self.monitor]['best_epoch'] == state.epoch:
+            print(f'Saving best at epoch {state.epoch}')
+            state.save(self.path / "best.pt")

@@ -24,8 +24,11 @@ def import_string(dotted_path):
         ) from err
 
 
-def load_class(obj_config, main_param=None):
+def load_class(obj_config, **kwargs):
     obj_class = import_string(obj_config.class_name)
-    if main_param is not None:
-        return obj_class(main_param, **obj_config.params)
-    return obj_class(**obj_config.params)
+
+    params = kwargs
+    if 'params' in obj_config:
+        params.update(**obj_config.params)
+
+    return obj_class(**params)
