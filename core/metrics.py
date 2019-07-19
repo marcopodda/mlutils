@@ -65,6 +65,7 @@ class Metric:
 
 
 class Loss(Metric):
+    name = "loss"
     greater_is_better = False
 
     def __init__(self, monitor_on=['training', 'validation', 'test'],
@@ -122,6 +123,7 @@ class PerformanceMetric(Metric):
 
 
 class BinaryAccuracy(PerformanceMetric):
+    name = "accuracy"
     greater_is_better = True
     metric_fun = staticmethod(metrics.accuracy_score)
 
@@ -131,8 +133,9 @@ class BinaryAccuracy(PerformanceMetric):
 
 
 class MSE(PerformanceMetric):
+    name = "mse"
     metric_fun = staticmethod(metrics.mean_squared_error)
     greater_is_better = False
 
     def _prepare_data(self, outputs, targets):
-        return outputs, targets
+        return torch.sigmoid(outputs), targets

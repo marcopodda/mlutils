@@ -1,5 +1,8 @@
+import numpy as np
+
 from utils.module_loading import dynamic_class_load
 from .events import EventHandler
+from .loggers import CSVLogger
 
 
 class Monitor(EventHandler):
@@ -7,9 +10,9 @@ class Monitor(EventHandler):
         self.metrics = []
         self.early_stopper = None
         self.saver = None
+        self.logger = None
 
         monitor_config = config.get('monitor')
-
         if 'metrics' in monitor_config:
             metric_configs = monitor_config.get('metrics')
             for metric_config in metric_configs:
@@ -25,6 +28,11 @@ class Monitor(EventHandler):
                 metric = self.get_save_best_metric()
                 saver_config = monitor_config.get('saver')
                 self.saver = dynamic_class_load(saver_config, metric)
+
+            if 'logger' in monitor_config:
+                logger_config = monitor_config.get('logger')
+                self.logger = CSVLogger(**logger_config.params)
+                self.logger.init(self.metrics)
 
     def get_early_stopper_metric(self):
         return self.metrics[0]
@@ -42,6 +50,15 @@ class Monitor(EventHandler):
         if self.saver is not None:
             self.saver.check_for_save(phase, state)
 
+        if self.logger is not None:
+            values = {}
+            for metric in self.metrics:
+                try:
+                    values.update({metric.name: metric.data[phase]['current']})
+                except KeyError:
+                    values.update({metric.name: None})
+            self.logger.log(phase, values)
+
     def _on_batch_start(self):
         for metric in self.metrics:
             metric.reset_batch_data()
@@ -51,31 +68,36 @@ class Monitor(EventHandler):
             metric.update_batch_data(state)
 
     def on_training_batch_end(self, state):
-        return self._on_batch_end(state)
+        self._on_batch_end(state)
 
     def on_training_batch_start(self, state):
-        return self._on_batch_start()
+        self._on_batch_start()
 
     def on_training_epoch_end(self, state):
-        return self._on_epoch_end('training', state)
+        self._on_epoch_end('training', state)
 
     def on_validation_batch_end(self, state):
-        return self._on_batch_end(state)
+        self._on_batch_end(state)
 
     def on_validation_batch_start(self, state):
-        return self._on_batch_start()
+        self._on_batch_start()
 
     def on_validation_epoch_end(self, state):
-        return self._on_epoch_end('validation', state)
+        self._on_epoch_end('validation', state)
 
     def on_test_batch_end(self, state):
-        return self._on_batch_end(state)
+        self._on_batch_end(state)
 
     def on_test_batch_start(self, state):
-        return self._on_batch_start()
+        self._on_batch_start()
 
     def on_test_end(self, state):
-        return self._on_epoch_end('test', state)
+        self._on_epoch_end('test', state)
+        self.logger._empty_buffer('test')
+
+    def on_fit_end(self, state):
+        for phase in ['training', 'validation']:
+            self.logger._empty_buffer(phase)
 
     def state_dict(self):
         state_dict = {'metrics': [m.state_dict() for m in self.metrics]}
@@ -96,11 +118,7 @@ class Monitor(EventHandler):
         if 'saver' in monitor_state_dict:
             self.saver.load_state_dict(monitor_state_dict['saver'])
 
-    def on_fit_start(self, state):
-        pass
 
-    def on_epoch_end(self, state):
-        pass
 
 
 

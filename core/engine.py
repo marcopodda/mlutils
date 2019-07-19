@@ -5,9 +5,10 @@ from utils.training import get_device
 
 from .events import EventDispatcher, State
 from .optimizer import Optimizer
-from .logger import Logger
 from .monitor import Monitor
 from .timer import Timer
+
+from pathlib import Path
 
 
 def build_model(config, dim_input, dim_target):
@@ -36,7 +37,6 @@ class Engine(EventDispatcher):
             criterion=build_criterion(config),
             stop_training=False,
             save_best=False)
-
         # callbacks
         self.register(Optimizer(config, self.state.model))
 
@@ -45,7 +45,6 @@ class Engine(EventDispatcher):
 
         if 'timer' in config:
             self.register(Timer())
-
 
         self.save_path = save_path
 
@@ -57,7 +56,6 @@ class Engine(EventDispatcher):
 
         for epoch in range(start_epoch, start_epoch + num_epochs):
             self.state.update(epoch=epoch)
-            print(epoch)
             self._dispatch('on_epoch_start', self.state)
 
             self.state.model.train()
@@ -74,23 +72,22 @@ class Engine(EventDispatcher):
             self._dispatch('on_epoch_end', self.state)
 
             if self.state.stop_training:
-                print(f'Early stopping at epoch {epoch}.')
                 break
 
             if self.save_path is not None:
                 if self.state.save_best:
-                    print(f'Saving best model at epoch {epoch}.')
                     self.save(self.save_path, best=True)
                 self.save(self.save_path, best=False)
 
         self._dispatch('on_fit_end', self.state)
         self.save(self.save_path, best=False)
 
+
     def _train_one_epoch(self, loader):
         for idx, batch in enumerate(loader):
             self._dispatch('on_training_batch_start', self.state)
 
-            train_data = self.process_batch(batch)
+            train_data = self.feed_forward(batch)
             self.state.update(**train_data)
 
             train_data['loss'].backward()
@@ -101,7 +98,7 @@ class Engine(EventDispatcher):
     def _validate_one_epoch(self, loader):
         for idx, batch in enumerate(loader):
             self._dispatch('on_validation_batch_start', self.state)
-            self.state.update(**self.process_batch(batch))
+            self.state.update(**self.feed_forward(batch))
             self._dispatch('on_validation_batch_end', self.state)
 
     def evaluate(self, test_loader):
@@ -111,13 +108,15 @@ class Engine(EventDispatcher):
             self.load(self.save_path, best=False)
 
         self._dispatch('on_test_start', self.state)
+
         for idx, batch in enumerate(test_loader):
             self._dispatch('on_test_batch_start', self.state)
-            self.state.update(**self.process_batch(batch))
+            self.state.update(**self.feed_forward(batch))
             self._dispatch('on_test_batch_end', self.state)
+
         self._dispatch('on_test_end', self.state)
 
-    def process_batch(self, batch):
+    def feed_forward(self, batch):
         raise NotImplementedError
 
     def save(self, path, best=False):

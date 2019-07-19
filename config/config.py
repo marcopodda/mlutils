@@ -58,13 +58,21 @@ DEFAULTS = {
             {
                 'class_name': 'core.metrics.Loss',
                 'params': {
-                    'monitor_on': ['training', 'validation'],
+                    'monitor_on': ['training', 'validation','test'],
                     'early_stopping_on': 'validation',
                     'save_best_on': 'validation'
                 },
             },
             {
                 'class_name': 'core.metrics.BinaryAccuracy',
+                'params': {
+                    'monitor_on': ['training', 'validation', 'test'],
+                    'early_stopping_on': None,
+                    'save_best_on': None
+                }
+            },
+            {
+                'class_name': 'core.metrics.MSE',
                 'params': {
                     'monitor_on': ['training', 'validation', 'test'],
                     'early_stopping_on': None,
@@ -79,14 +87,15 @@ DEFAULTS = {
         'saver': {
             'class_name': 'core.saver.ModelSaver',
             'params': {}
+        },
+        'logger': {
+            'params': {
+                'monitor_on': ['training', 'validation', 'test'],
+                'log_every': 10
+            }
         }
     },
     'timer': True,
-    'logger': {
-        'log_training': True,
-        'log_evaluation': True,
-        'log_events': True
-    }
 }
 
 

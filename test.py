@@ -22,7 +22,7 @@ class Manager(DataManager):
 
 
 class MyEngine(Engine):
-    def process_batch(self, batch):
+    def feed_forward(self, batch):
         inputs, targets = batch
         outputs = self.state.model(inputs)
         loss = self.state.criterion(outputs, targets)
