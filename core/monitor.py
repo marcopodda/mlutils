@@ -51,7 +51,7 @@ class Monitor(EventHandler):
     def on_test_batch_start(self, state):
         self._on_batch_start(state)
 
-    def on_test_end(self, state):
+    def on_test_epoch_end(self, state):
         self._on_epoch_end(state)
 
     def state_dict(self):

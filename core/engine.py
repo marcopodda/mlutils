@@ -91,7 +91,7 @@ class Engine(EventDispatcher):
             self.set_device(train_device)
 
             self._dispatch('on_training_epoch_start', self.state)
-            self._train_one_epoch(train_loader)
+            self._train_epoch(train_loader)
             self._dispatch('on_training_epoch_end', self.state)
 
             if val_loader is not None:
@@ -99,31 +99,13 @@ class Engine(EventDispatcher):
                 self.set_device(val_device)
 
                 self._dispatch('on_validation_epoch_start', self.state)
-                self._validate_one_epoch(val_loader)
+                self._evaluate_epoch(val_loader)
                 self._dispatch('on_validation_epoch_end', self.state)
 
             self._dispatch('on_epoch_end', self.state)
             self.state.save_epoch_results()
 
         self._dispatch('on_fit_end', self.state)
-
-    def _train_one_epoch(self, loader):
-        for idx, batch in enumerate(loader):
-            self._dispatch('on_training_batch_start', self.state)
-
-            train_data = self.feed_forward_batch(batch)
-            self.state.update(**train_data)
-
-            train_data['loss'].backward()
-            self._dispatch('on_backward', self.state)
-
-            self._dispatch('on_training_batch_end', self.state)
-
-    def _validate_one_epoch(self, loader):
-        for idx, batch in enumerate(loader):
-            self._dispatch('on_validation_batch_start', self.state)
-            self.state.update(**self.feed_forward_batch(batch))
-            self._dispatch('on_validation_batch_end', self.state)
 
     def evaluate(self, test_loader, test_device=None):
         try:
@@ -135,16 +117,28 @@ class Engine(EventDispatcher):
         self.set_device(test_device)
 
         self.state.init_epoch_results()
-        self._dispatch('on_test_start', self.state)
-        self._test_epoch(test_loader)
-        self._dispatch('on_test_end', self.state)
+        self._dispatch('on_test_epoch_start', self.state)
+        self._evaluate_epoch(test_loader)
+        self._dispatch('on_test_epoch_end', self.state)
         self.state.save_epoch_results()
 
-    def _test_epoch(self, loader):
+    def _train_epoch(self, loader):
         for idx, batch in enumerate(loader):
-            self._dispatch('on_test_batch_start', self.state)
+            self._dispatch('on_training_batch_start', self.state)
+
+            train_data = self.feed_forward_batch(batch)
+            self.state.update(**train_data)
+
+            train_data['loss'].backward()
+            self._dispatch('on_backward', self.state)
+
+            self._dispatch('on_training_batch_end', self.state)
+
+    def _evaluate_epoch(self, loader):
+        for idx, batch in enumerate(loader):
+            self._dispatch(f'on_{self.state.phase}_batch_start', self.state)
             self.state.update(**self.feed_forward_batch(batch))
-            self._dispatch('on_test_batch_end', self.state)
+            self._dispatch(f'on_{self.state.phase}_batch_end', self.state)
 
     def feed_forward_batch(self, batch):
         raise NotImplementedError

@@ -65,10 +65,10 @@ class EventHandler:
     def on_backward(self, state):
         pass
 
-    def on_test_start(self, state):
+    def on_test_epoch_start(self, state):
         pass
 
-    def on_test_end(self, state):
+    def on_test_epoch_end(self, state):
         pass
 
     def on_test_batch_start(self, state):
