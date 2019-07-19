@@ -1,6 +1,6 @@
 import torch
 
-from utils.module_loading import dynamic_class_load
+from utils.module_loading import load_class
 from .events import EventHandler
 
 
@@ -18,17 +18,17 @@ class Optimizer(EventHandler):
         self.config = config
 
         opt_config = self.config.get('optimizer')
-        self.optimizer = dynamic_class_load(opt_config, model.parameters())
+        self.optimizer = load_class(opt_config, model.parameters())
 
         self.scheduler = None
         if 'scheduler' in config:
             sched_config = self.config.get('optimizer', 'scheduler')
-            self.scheduler = dynamic_class_load(sched_config, self.optimizer)
+            self.scheduler = load_class(sched_config, self.optimizer)
 
         self.gradient_clipper = None
         if 'gradient_clipper' in config:
             grad_clip_config = self.config.get('optimizer', 'gradient_clipper')
-            self.gradient_clipper = dynamic_class_load(grad_clip_config)
+            self.gradient_clipper = load_class(grad_clip_config)
 
     def on_training_epoch_start(self, state):
         if self.scheduler is not None:

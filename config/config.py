@@ -38,6 +38,46 @@ DEFAULTS = {
     'optimizer': {
         'class_name': 'torch.optim.Adam',
         'params': {'lr': 0.001},
+    },
+    'callbacks': [
+        'accuracy',
+        'logger'
+    ],
+    'monitor': [],
+    'logger': False
+}
+
+TEST_CONFIG = {
+    'max_epochs': 10,
+    'device': 'cpu',
+    'model': {
+        'class_name': 'modules.models.MLP',
+        'params': {
+            'dim_layers': [256, 128]
+        }
+    },
+    'criterion': {
+        'class_name': 'modules.criterions.BCE',
+        'params': {}
+    },
+    'data': {
+        'root': 'DATA',
+        'name': 'random',
+        'splitter': {
+            'class_name': 'data.splitters.HoldoutSplitter',
+            'params': {}
+        },
+        'loader': {
+            'class_name': 'torch.utils.data.DataLoader',
+            'params': {
+                'batch_size': 32,
+                'shuffle': True
+            }
+        }
+    },
+    'optimizer': {
+        'class_name': 'torch.optim.Adam',
+        'params': {'lr': 0.001},
         'scheduler': {
             'class_name': 'torch.optim.lr_scheduler.StepLR',
             'params': {
@@ -53,51 +93,17 @@ DEFAULTS = {
             }
         },
     },
-    'monitor': {
-        'metrics': [
-            {
-                'class_name': 'core.metrics.Loss',
-                'params': {
-                    'monitor_on': ['training', 'validation','test'],
-                    'early_stopping_on': 'validation',
-                    'save_best_on': 'validation'
-                },
-            },
-            {
-                'class_name': 'core.metrics.BinaryAccuracy',
-                'params': {
-                    'monitor_on': ['training', 'validation', 'test'],
-                    'early_stopping_on': None,
-                    'save_best_on': None
-                }
-            },
-            {
-                'class_name': 'core.metrics.MSE',
-                'params': {
-                    'monitor_on': ['training', 'validation', 'test'],
-                    'early_stopping_on': None,
-                    'save_best_on': None
-                }
-            }
-        ],
-        'early_stopper': {
-            'class_name': 'core.early_stopping.PatienceEarlyStopper',
-            'params': {'patience': 30}
-        },
-        'saver': {
-            'class_name': 'core.saver.ModelSaver',
-            'params': {}
-        },
-        'logger': {
-            'params': {
-                'monitor_on': ['training', 'validation', 'test'],
-                'log_every': 10
-            }
-        }
-    },
-    'timer': True,
+    # 'callbacks': {
+    #     'metrics': [
+    #         'core.metrics.BinaryAccuracy',
+    #         'core.metrics.MSE',
+    #     ],
+    #     'loggers': [
+    #         'csv',
+    #         'events'
+    #     ]
+    # }
 }
-
 
 class ConfigError(Exception):
     pass
@@ -113,7 +119,7 @@ class LoadMixin:
 class Config(LoadMixin):
     def __init__(self, use_defaults=True, **config_dict):
         if use_defaults:
-            for name, value in DEFAULTS.items():
+            for name, value in TEST_CONFIG.items():
                 setattr(self, name, value)
 
         for name, value in config_dict.items():

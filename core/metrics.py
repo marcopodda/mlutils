@@ -1,4 +1,4 @@
-import operator
+import time
 import numpy as np
 
 import torch
@@ -7,48 +7,16 @@ from sklearn import metrics
 
 
 class Metric:
-    def __init__(self, monitor_on=['training', 'validation', 'test'],
-                       early_stopping_on='validation',
-                       save_best_on='validation'):
+    def __init__(self):
         assert hasattr(self, 'greater_is_better')
-
-        self.monitor_on = monitor_on
-        self.early_stopping_on = early_stopping_on
-        self.save_best_on = save_best_on
-
-        self.data = {}
-        for phase in self.monitor_on:
-            best = -np.float('inf') if self.greater_is_better else np.float('inf')
-            self.data.update({
-                phase: {
-                    'best': best,
-                    'is_best': False,
-                    'best_epoch': 0,
-                    'current': None,
-                    'values': []
-                }
-            })
-
-    @classmethod
-    def op(cls, value, best_value):
-        if cls.greater_is_better:
-            return operator.gt(value, best_value)
-        return operator.lt(value, best_value)
+        self.training = None
+        self.validation = None
+        self.test = None
 
     def _update(self, phase, value):
-        if phase in self.monitor_on:
-            self.data[phase]['current'] = value
-            self.data[phase]['values'].append(value)
+        setattr(self, phase, value)
 
-            if self.op(value, self.data[phase]['best']):
-                current_epoch = len(self.data[phase]['values'])
-                self.data[phase]['best'] = value
-                self.data[phase]['is_best'] = True
-                self.data[phase]['best_epoch'] = current_epoch
-            else:
-                self.data[phase]['is_best'] = False
-
-    def update(self, phase, state):
+    def update(self, state):
         raise NotImplementedError
 
     def get_data(self, phase):
@@ -61,38 +29,54 @@ class Metric:
         self.__dict__ = state_dict
 
     def value(self, phase):
-        return self.data[phase]['values'][-1]
+        return getattr(self, phase)
 
 
 class Loss(Metric):
     name = "loss"
     greater_is_better = False
 
-    def __init__(self, monitor_on=['training', 'validation', 'test'],
-                       early_stopping_on='validation',
-                       save_best_on='validation'):
-        super().__init__(monitor_on=monitor_on)
-
+    def __init__(self):
+        super().__init__()
         self.batch_losses = []
 
     def update_batch_data(self, state):
         loss = state.loss.item()
         self.batch_losses.append(loss)
 
-    def reset_batch_data(self):
+    def reset_batch_data(self, state):
         self.batch_losses = []
 
-    def update(self, phase):
+    def update(self, state):
         epoch_loss = sum(self.batch_losses) / len(self.batch_losses)
-        return self._update(phase, value=epoch_loss)
+        return self._update(state.phase, value=epoch_loss)
+
+
+class Time(Metric):
+    name = "time"
+    greater_is_better = False
+
+    def __init__(self):
+        super().__init__()
+        self.batch_times = []
+
+    def update_batch_data(self, state):
+        self.batch_times[-1] = time.time() - self.batch_times[-1]
+
+    def reset_batch_data(self, state):
+        self.batch_times.append(time.time())
+
+    def update(self, state):
+        time_elapsed = sum(self.batch_times)
+        self.batch_times = []
+        return self._update(state.phase, value=time_elapsed)
 
 
 class PerformanceMetric(Metric):
-    def __init__(self, monitor_on=['training', 'validation', 'test'],
-                       early_stopping_on='validation',
-                       save_best_on='validation'):
-        super().__init__(monitor_on=monitor_on)
+    def __init__(self):
         assert hasattr(self, 'metric_fun')
+        assert hasattr(self, 'name')
+        super().__init__()
 
         self.outputs = []
         self.targets = []
@@ -101,11 +85,11 @@ class PerformanceMetric(Metric):
         self.outputs.append(state.outputs.detach())
         self.targets.append(state.targets.detach())
 
-    def reset_batch_data(self):
+    def reset_batch_data(self, state):
         self.outputs = []
         self.targets = []
 
-    def update(self, phase):
+    def update(self, state):
         outputs = torch.cat(self.outputs)
         targets = torch.cat(self.targets)
 
@@ -116,7 +100,7 @@ class PerformanceMetric(Metric):
 
         outputs, targets = self._prepare_data(outputs, targets)
         value = self.metric_fun(targets, outputs)
-        return self._update(phase, value=value)
+        return self._update(state.phase, value=value)
 
     def _prepare_data(self, outputs, targets):
         raise NotImplementedError
@@ -139,3 +123,45 @@ class MSE(PerformanceMetric):
 
     def _prepare_data(self, outputs, targets):
         return torch.sigmoid(outputs), targets
+
+
+class MetricsList:
+    def __init__(self, metrics):
+        self._metrics = metrics
+
+    def update_batch_data(self, state):
+        for metric in self._metrics:
+            metric.update_batch_data(state)
+
+    def reset_batch_data(self, state):
+        for metric in self._metrics:
+            metric.reset_batch_data(state)
+
+    def update(self, state):
+        for metric in self._metrics:
+            metric.update(state)
+
+    def append(self, metric):
+        self._metrics.append(metric)
+
+    def get_data(self, state):
+        data = {}
+        for metric in self._metrics:
+            data[f"{state.phase}_{metric.name}"] = metric.value(state.phase)
+        return data
+
+    def __getitem__(self, index):
+        return self._metrics[index]
+
+    def __len__(self):
+        return len(self._metrics)
+
+    def __iter__(self):
+        return iter(self._metrics)
+
+    def state_dict(self):
+        return [m.state_dict() for m in self._metrics]
+
+    def load_state_dict(self, state_dicts):
+        for metric, state_dict in zip(self._metrics, state_dicts):
+            metric.load_state_dict(state_dict)

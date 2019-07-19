@@ -24,7 +24,7 @@ def import_string(dotted_path):
         ) from err
 
 
-def dynamic_class_load(obj_config, main_param=None):
+def load_class(obj_config, main_param=None):
     obj_class = import_string(obj_config.class_name)
     if main_param is not None:
         return obj_class(main_param, **obj_config.params)
