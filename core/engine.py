@@ -91,7 +91,6 @@ class Engine(EventDispatcher):
             self.set_device(train_device)
 
             self._dispatch('on_training_epoch_start', self.state)
-
             self._train_one_epoch(train_loader)
             self._dispatch('on_training_epoch_end', self.state)
 
@@ -106,16 +105,7 @@ class Engine(EventDispatcher):
             self._dispatch('on_epoch_end', self.state)
             self.state.save_epoch_results()
 
-            # if self.state.stop_training:
-            #     break
-
-            # if self.save_path is not None:
-            #     if self.state.save_best:
-            #         self.save(self.save_path, best=True)
-            #     self.save(self.save_path, best=False)
-
         self._dispatch('on_fit_end', self.state)
-        self.save(self.save_path, best=False)
 
     def _train_one_epoch(self, loader):
         for idx, batch in enumerate(loader):
