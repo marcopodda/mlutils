@@ -2,8 +2,8 @@ import sys
 import torch
 from loguru import logger
 
-from utils.module_loading import load_class
-from utils.training import get_device
+from ..utils.module_loading import load_class
+from ..utils.training import get_device
 
 from .events import EventDispatcher
 from .state import State

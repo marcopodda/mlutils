@@ -1,3 +1,4 @@
+import os
 import sys
 from loguru import logger
 
@@ -8,7 +9,7 @@ from .events import EventHandler
 
 
 class CSVLogger(EventHandler):
-    def __init__(self, logdir=Path('logs')):
+    def __init__(self, logdir=Path('mlutils/logs')):
         self.logdir = logdir
 
     def on_epoch_end(self, state):
@@ -18,7 +19,6 @@ class CSVLogger(EventHandler):
         else:
             df = pd.read_csv(filename, index_col=False)
             df = pd.concat([df, pd.DataFrame([state.epoch_results])], sort=False)
-
         df.round(6).to_csv(filename, index=False)
 
     def on_test_epoch_end(self, state):
@@ -29,8 +29,9 @@ class CSVLogger(EventHandler):
 
 config = {
     "handlers": [
+        # {"sink": open(os.devnull, 'w'), "enqueue": True, "format": '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | {message}'},
         {"sink": sys.stdout, "enqueue": True, "format": '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | {message}'},
-        {"sink": Path('logs') / "events" / "events_{time}.log", "enqueue": True},
+        {"sink": Path('mlutils/logs') / "events" / "events_{time}.log", "enqueue": True},
     ]
 }
 

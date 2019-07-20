@@ -26,11 +26,11 @@ if __name__ == "__main__":
     val_loader = datamanager.get_loader('validation')
     test_loader = datamanager.get_loader('test')
 
-    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('ckpts'))
+    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('mlutils/ckpts'))
     engine.fit(train_loader, val_loader, num_epochs=50)
 
-    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('ckpts'))
-    engine.load(Path('ckpts'), best=False)
+    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('mlutils/ckpts'))
+    engine.load(Path('mlutils/ckpts'), best=False)
     engine.fit(train_loader, val_loader, num_epochs=10)
     engine.evaluate(test_loader)
 

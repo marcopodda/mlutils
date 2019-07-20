@@ -1,6 +1,6 @@
 import torch
 
-from utils.module_loading import load_class, import_string
+from ..utils.module_loading import load_class, import_string
 from .events import EventHandler
 
 

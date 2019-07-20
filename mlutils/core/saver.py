@@ -4,7 +4,7 @@ from .events import EventHandler
 from .loggers import logger
 
 class ModelSaver(EventHandler):
-    def __init__(self, path=Path('ckpts'), monitor='validation_loss'):
+    def __init__(self, path=Path('mlutils/ckpts'), monitor='validation_loss'):
         self.path = path
         self.monitor = monitor
 

@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from utils.training import pretty_print
+from ..utils.training import pretty_print
 from .loggers import logger
 
 
@@ -48,13 +48,6 @@ class State:
     def save_epoch_results(self):
         self.results.append(self.epoch_results)
         logger.info(pretty_print(self.epoch_results))
-
-    def state_dict(self):
-        state_dict = self.__dict__.copy()
-        for key, obj in state_dict.items():
-            if hasattr(obj, 'state_dict'):
-                state_dict[key] = obj.state_dict()
-        return {'state': state_dict}
 
     def load(self, filename):
         logger.info(f"Loading state file {filename}")

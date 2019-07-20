@@ -18,9 +18,9 @@ def entry2log(name):
 
 def pretty_print(result):
     log = []
-    training_keys = [k for k in result if 'training' in k]
-    validation_keys = [k for k in result if 'validation' in k]
-    test_keys = [k for k in result if 'test' in k]
+    training_keys = [k for (k, v) in result.items() if 'training' in k]
+    validation_keys = [k for (k, v) in result.items() if 'validation' in k]
+    test_keys = [k for (k, v) in result.items() if 'test' in k]
 
     for train_key, val_key in zip(training_keys, validation_keys):
         name = "_".join([entry2log(k) for k in train_key.split("_")])

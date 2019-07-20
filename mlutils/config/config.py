@@ -1,5 +1,5 @@
 import itertools
-from utils.serialize import load_yaml, save_yaml
+from ..utils.serialize import load_yaml, save_yaml
 
 
 NOT_A_LIST_ERROR_MSG = """
@@ -54,29 +54,29 @@ TEST_CONFIG = {
     'max_epochs': 10,
     'device': 'cpu',
     'model': {
-        'class_name': 'modules.models.MLP',
+        'class_name': 'mlutils.modules.models.MLP',
         'params': {'dim_layers': [128, 64]}
     },
-    'criterion': {'class_name': 'modules.criterions.BinaryCrossEntropy'},
+    'criterion': {'class_name': 'mlutils.modules.criterions.CrossEntropy'},
     'data': {
-        'root': 'DATA',
-        'name': 'toy_classification_binary',
+        'root': 'mlutils/DATA',
+        'name': 'toy_classification',
          'dataset': {
-            'class_name': 'data.datasets.ToyClassificationDataset',
-            'params': {'n_samples': 10000, 'n_features': 8, 'n_informative': 6}
+            'class_name': 'mlutils.data.datasets.ToyClassificationDataset',
+            'params': {'n_samples': 10000, 'n_features': 16, 'n_informative': 8, 'n_classes': 3}
         },
         'splitter': {
-            'class_name': 'data.splitters.HoldoutSplitter',
+            'class_name': 'mlutils.data.splitters.HoldoutSplitter',
             'params': {'stratified': True}
         },
         'loader': {
             'class_name': 'torch.utils.data.DataLoader',
-            'params': {'batch_size': 32, 'shuffle': False}
+            'params': {'batch_size': 32, 'shuffle': True}
         }
     },
     'optimizer': {
         'class_name': 'torch.optim.Adam',
-        'params': {'lr': 0.0001},
+        'params': {'lr': 0.001},
         'scheduler': {
             'class_name': 'torch.optim.lr_scheduler.StepLR',
             'params': {'gamma': 0.5, 'step_size': 30},
@@ -91,16 +91,16 @@ TEST_CONFIG = {
     },
     'callbacks': {
         'metrics': [
-            {'class_name': 'core.metrics.BinaryAccuracy'},
-            {'class_name': 'core.metrics.AUC'},
+            {'class_name': 'mlutils.core.metrics.MulticlassAccuracy'},
+            # {'class_name': 'mlutils.core.metrics.AUC'},
             # {'class_name': 'core.metrics.Time'}
         ],
         'early_stopper': {
-            'class_name': 'core.early_stopping.PatienceEarlyStopper',
+            'class_name': 'mlutils.core.early_stopping.PatienceEarlyStopper',
             'params': {'patience': 10}
         },
-        'model_saver': {'class_name': 'core.saver.ModelSaver'},
-        'loggers': [{'class_name': 'core.loggers.CSVLogger'}]
+        'model_saver': {'class_name': 'mlutils.core.saver.ModelSaver'},
+        'loggers': [{'class_name': 'mlutils.core.loggers.CSVLogger'}]
     }
 }
 

@@ -29,6 +29,41 @@ class Metric:
         return getattr(self, phase)
 
 
+class MetricsList:
+    def __init__(self, metrics):
+        self._metrics = metrics
+
+    def update_batch_data(self, state):
+        for metric in self._metrics:
+            metric.update_batch_data(state)
+
+    def reset_batch_data(self, state):
+        for metric in self._metrics:
+            metric.reset_batch_data(state)
+
+    def update(self, state):
+        for metric in self._metrics:
+            metric.update(state)
+
+    def append(self, metric):
+        self._metrics.append(metric)
+
+    def get_data(self, phase):
+        data = {}
+        for metric in self._metrics:
+            data[f"{phase}_{metric.name}"] = metric.get_value(phase)
+        return data
+
+    def __getitem__(self, index):
+        return self._metrics[index]
+
+    def __len__(self):
+        return len(self._metrics)
+
+    def __iter__(self):
+        return iter(self._metrics)
+
+
 class Loss(Metric):
     name = "loss"
     operator = op.lt
@@ -78,8 +113,8 @@ class PerformanceMetric(Metric):
         self.targets = []
 
     def update_batch_data(self, state):
-        self.outputs.append(state.outputs.view(*state.outputs.size()).detach())
-        self.targets.append(state.targets.view(*state.targets.size()).detach())
+        self.outputs.append(state.outputs.detach())
+        self.targets.append(state.targets.detach())
 
     def reset_batch_data(self, state):
         self.outputs = []
@@ -147,38 +182,3 @@ class AUC(PerformanceMetric):
 
     def _prepare_data(self, outputs, targets):
         return torch.sigmoid(outputs), targets
-
-
-class MetricsList:
-    def __init__(self, metrics):
-        self._metrics = metrics
-
-    def update_batch_data(self, state):
-        for metric in self._metrics:
-            metric.update_batch_data(state)
-
-    def reset_batch_data(self, state):
-        for metric in self._metrics:
-            metric.reset_batch_data(state)
-
-    def update(self, state):
-        for metric in self._metrics:
-            metric.update(state)
-
-    def append(self, metric):
-        self._metrics.append(metric)
-
-    def get_data(self, phase):
-        data = {}
-        for metric in self._metrics:
-            data[f"{phase}_{metric.name}"] = metric.get_value(phase)
-        return data
-
-    def __getitem__(self, index):
-        return self._metrics[index]
-
-    def __len__(self):
-        return len(self._metrics)
-
-    def __iter__(self):
-        return iter(self._metrics)

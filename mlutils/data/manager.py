@@ -6,8 +6,8 @@ from pathlib import Path
 import torch
 from torch.utils import data
 
-from utils.module_loading import load_class
-from utils.serialize import load_yaml, save_yaml
+from ..utils.module_loading import load_class
+from ..utils.serialize import load_yaml, save_yaml
 from .splitters import HoldoutSplitter
 
 
@@ -61,6 +61,7 @@ class DataManager:
 
     def get_loader(self, name, outer_fold=0, inner_fold=0):
         indices = self.splits[name][outer_fold][inner_fold]
+        print("indices", len(indices))
         partition = data.Subset(self.dataset, indices)
         loader_config = self.config.get('loader')
         loader = load_class(loader_config, dataset=partition)
