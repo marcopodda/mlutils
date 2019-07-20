@@ -1,6 +1,9 @@
 import torch
 import numpy as np
 
+from utils.training import pretty_print
+from .loggers import logger
+
 
 class State:
     def __init__(self, **values):
@@ -43,8 +46,8 @@ class State:
                 self.best_results[key]['best_epoch'] = self.epoch
 
     def save_epoch_results(self):
-        print(self.epoch_results)
         self.results.append(self.epoch_results)
+        logger.info(pretty_print(self.epoch_results))
 
     def state_dict(self):
         state_dict = self.__dict__.copy()
@@ -54,6 +57,7 @@ class State:
         return {'state': state_dict}
 
     def load(self, filename):
+        logger.info(f"Loading state file {filename}")
         state_dict = torch.load(filename)
         self.model.load_state_dict(state_dict['model_state'])
         self.criterion.load_state_dict(state_dict['criterion_state'])
@@ -71,4 +75,5 @@ class State:
             'optimizer_state': self.optimizer_state,
             'scheduler_state': self.scheduler_state
         }
+        logger.info(f"Saving state to file {filename}")
         torch.save(state_dict, filename)

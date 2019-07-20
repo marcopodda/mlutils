@@ -1,4 +1,6 @@
+import sys
 import torch
+from loguru import logger
 
 from utils.module_loading import load_class
 from utils.training import get_device
@@ -7,7 +9,7 @@ from .events import EventDispatcher
 from .state import State
 from .optimizer import Optimizer
 from .monitor import Monitor
-from .loggers import CSVLogger
+from .loggers import CSVLogger, logger
 
 from pathlib import Path
 
@@ -89,20 +91,23 @@ class Engine(EventDispatcher):
 
         start_epoch = self.state.epoch
         num_epochs = num_epochs or self.config.max_epochs
-        print(f'Start training at epoch: {self.state.epoch}')
+        logger.info(f'{"Starting" if start_epoch == 0 else "Resuming"} training at epoch: {self.state.epoch}')
 
         for epoch in range(start_epoch, start_epoch + num_epochs):
             self.state.update(epoch=epoch)
 
             if self.state.stop_training is True:
-                print(f"Early stopping - epoch {self.state.epoch-1}")
-                print(self.state.best_results)
+                logger.info(f"Early stopping at epoch {self.state.epoch - 1}.")
                 break
 
+            logger.info(f"Starting epoch {self.state.epoch}.")
             self._dispatch('on_epoch_start', self.state)
 
             self.set_training_mode()
+            logger.info("Training mode set.")
+
             self.set_device(train_device)
+            logger.info(f"Device is now '{self.device}'.")
 
             self._dispatch('on_training_epoch_start', self.state)
             self._train_epoch(train_loader)
@@ -110,7 +115,10 @@ class Engine(EventDispatcher):
 
             if val_loader is not None:
                 self.set_validation_mode()
+                logger.info("Validation mode set.")
+
                 self.set_device(val_device)
+                logger.info(f"Device is now '{self.device}'.")
 
                 self._dispatch('on_validation_epoch_start', self.state)
                 self._evaluate_epoch(val_loader)
@@ -122,6 +130,7 @@ class Engine(EventDispatcher):
         self._dispatch('on_fit_end', self.state)
 
     def evaluate(self, test_loader, test_device=None):
+        logger.info("Starting final evaluation.")
         try:
             self.load(self.save_path, best=True)
         except FileNotFoundError:
@@ -136,6 +145,7 @@ class Engine(EventDispatcher):
         self.state.save_epoch_results()
 
     def _train_epoch(self, loader):
+        logger.info(f"Training epoch {self.state.epoch}.")
         for idx, batch in enumerate(loader):
             self._dispatch('on_training_batch_start', self.state)
 
@@ -146,12 +156,15 @@ class Engine(EventDispatcher):
             self._dispatch('on_backward', self.state)
 
             self._dispatch('on_training_batch_end', self.state)
+        logger.info(f"Training finished.")
 
     def _evaluate_epoch(self, loader):
+        logger.info(f"{self.state.phase.capitalize()} epoch {self.state.epoch}.")
         for idx, batch in enumerate(loader):
             self._dispatch(f'on_{self.state.phase}_batch_start', self.state)
             self.state.update(**self.feed_forward_batch(batch))
             self._dispatch(f'on_{self.state.phase}_batch_end', self.state)
+        logger.info(f"{self.state.phase.capitalize()} finished.")
 
     def feed_forward_batch(self, batch):
         raise NotImplementedError

@@ -4,6 +4,7 @@ import numpy as np
 import operator
 
 from .events import EventHandler
+from .loggers import logger
 
 
 class EarlyStopper(EventHandler):
@@ -22,6 +23,8 @@ class PatienceEarlyStopper(EarlyStopper):
     def on_epoch_end(self, state):
         best_epoch = state.best_results[self.monitor]['best_epoch']
         state.stop_training = state.epoch - best_epoch >= self.patience
+        if state.stop_training is True:
+            logger.warning(f"Early stopping: epoch {state.epoch} - best epoch {best_epoch} - patience {self.patience}")
 
 
 class GLEarlyStopper(EarlyStopper):
@@ -42,6 +45,9 @@ class GLEarlyStopper(EarlyStopper):
         self.count = 1 if delta < self.alpha else self.count + 1
         state.stop_training = self.count >= self.patience
 
+        if state.stop_training is True:
+            logger.warning(f"Early stopping: epoch {state.epoch} - count {self.count} - patience {self.patience}")
+
 
 class DeltaEarlyStopper(PatienceEarlyStopper):
     def __init__(self, monitor="validation_loss", mode="min", patience=10, min_delta=1e-5):
@@ -60,3 +66,6 @@ class DeltaEarlyStopper(PatienceEarlyStopper):
             self.count += 1
 
         state.stop_training = self.count >= self.patience
+
+        if state.stop_training is True:
+            logger.warning(f"Early stopping: epoch {state.epoch} - count {self.count} - patience {self.patience}")

@@ -7,44 +7,48 @@ The value associated with parameter '{key}' must be a list.
 """
 
 
-DEFAULTS = {
-    'max_epochs': 10,
-    'device': 'cpu',
-    'model': {
-        'class_name': 'modules.models.MLP',
-        'params': {
-            'dim_layers': [128, 64]
-        }
-    },
-    'criterion': {
-        'class_name': 'modules.criterions.BCE',
-        'params': {}
-    },
-    'data': {
-        'root': 'DATA',
-        'name': 'random',
-        'splitter': {
-            'class_name': 'data.splitters.HoldoutSplitter',
-            'params': {}
-        },
-        'loader': {
-            'class_name': 'torch.utils.data.DataLoader',
-            'params': {
-                'batch_size': 32,
-                'shuffle': True
-            }
-        }
-    },
-    'optimizer': {
-        'class_name': 'torch.optim.Adam',
-        'params': {'lr': 0.001},
-    },
-    'callbacks': {
-        'metrics': [
-            {'class_name': 'core.metrics.BinaryAccuracy'}
-        ]
-    }
-}
+# DEFAULTS = {
+#     'max_epochs': 10,
+#     'device': 'cpu',
+#     'model': {
+#         'class_name': 'modules.models.MLP',
+#         'params': {
+#             'dim_layers': [128, 64]
+#         }
+#     },
+#     'criterion': {
+#         'class_name': 'modules.criterions.BCE',
+#         'params': {}
+#     },
+#     'data': {
+#         'root': 'DATA',
+#         'name': 'toy_classification',
+#         'dataset': {
+#             'class_name': 'data.datasets.ToyClassificationDataset',
+#             'params': {'num_features': 32}
+#         },
+#         'splitter': {
+#             'class_name': 'data.splitters.HoldoutSplitter',
+#             'params': {}
+#         },
+#         'loader': {
+#             'class_name': 'torch.utils.data.DataLoader',
+#             'params': {
+#                 'batch_size': 32,
+#                 'shuffle': True
+#             }
+#         }
+#     },
+#     'optimizer': {
+#         'class_name': 'torch.optim.Adam',
+#         'params': {'lr': 0.001},
+#     },
+#     'callbacks': {
+#         'metrics': [
+#             {'class_name': 'core.metrics.BinaryAccuracy'}
+#         ]
+#     }
+# }
 
 TEST_CONFIG = {
     'max_epochs': 10,
@@ -53,39 +57,47 @@ TEST_CONFIG = {
         'class_name': 'modules.models.MLP',
         'params': {'dim_layers': [128, 64]}
     },
-    'criterion': {'class_name': 'modules.criterions.BCE'},
+    'criterion': {'class_name': 'modules.criterions.BinaryCrossEntropy'},
     'data': {
         'root': 'DATA',
-        'name': 'random',
-        'splitter': {'class_name': 'data.splitters.HoldoutSplitter'},
+        'name': 'toy_classification_binary',
+         'dataset': {
+            'class_name': 'data.datasets.ToyClassificationDataset',
+            'params': {'n_samples': 10000, 'n_features': 8, 'n_informative': 6}
+        },
+        'splitter': {
+            'class_name': 'data.splitters.HoldoutSplitter',
+            'params': {'stratified': True}
+        },
         'loader': {
             'class_name': 'torch.utils.data.DataLoader',
-            'params': {'batch_size': 32, 'shuffle': True}
+            'params': {'batch_size': 32, 'shuffle': False}
         }
     },
     'optimizer': {
         'class_name': 'torch.optim.Adam',
-        'params': {'lr': 0.001},
+        'params': {'lr': 0.0001},
         'scheduler': {
             'class_name': 'torch.optim.lr_scheduler.StepLR',
             'params': {'gamma': 0.5, 'step_size': 30},
         },
-        'gradient_clipper': {
-            'class_name': 'core.optimizer.GradientClipper',
-            'params': {
-                'func': 'torch.nn.utils.clip_grad.clip_grad_norm_',
-                'args': {'max_norm': 1.0}
-            }
-        },
+        # 'gradient_clipper': {
+        #     'class_name': 'core.optimizer.GradientClipper',
+        #     'params': {
+        #         'func': 'torch.nn.utils.clip_grad.clip_grad_norm_',
+        #         'args': {'max_norm': 1.0}
+        #     }
+        # },
     },
     'callbacks': {
         'metrics': [
             {'class_name': 'core.metrics.BinaryAccuracy'},
-            {'class_name': 'core.metrics.Time'}
+            {'class_name': 'core.metrics.AUC'},
+            # {'class_name': 'core.metrics.Time'}
         ],
         'early_stopper': {
             'class_name': 'core.early_stopping.PatienceEarlyStopper',
-            # 'params': {'alpha': 0.2}
+            'params': {'patience': 10}
         },
         'model_saver': {'class_name': 'core.saver.ModelSaver'},
         'loggers': [{'class_name': 'core.loggers.CSVLogger'}]

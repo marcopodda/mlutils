@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from .events import EventHandler
+from .loggers import logger
 
 class ModelSaver(EventHandler):
     def __init__(self, path=Path('ckpts'), monitor='validation_loss'):
@@ -8,10 +9,12 @@ class ModelSaver(EventHandler):
         self.monitor = monitor
 
     def on_fit_end(self, state):
-        print(f'Saving last at epoch {state.epoch}')
-        state.save(self.path / "last.pt")
+        filename = self.path / "last.pt"
+        logger.info(f"Saving last model in {filename}")
+        state.save(filename)
 
     def on_epoch_end(self, state):
         if state.best_results[self.monitor]['best_epoch'] == state.epoch:
-            print(f'Saving best at epoch {state.epoch}')
-            state.save(self.path / "best.pt")
+            filename = self.path / "best.pt"
+            logger.info(f"Found new best model at epoch {state.epoch}. Saving in {filename}")
+            state.save(filename)

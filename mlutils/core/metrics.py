@@ -3,6 +3,7 @@ import operator as op
 import numpy as np
 
 import torch
+from torch.nn import functional as F
 
 from sklearn import metrics
 
@@ -77,8 +78,8 @@ class PerformanceMetric(Metric):
         self.targets = []
 
     def update_batch_data(self, state):
-        self.outputs.append(state.outputs.detach())
-        self.targets.append(state.targets.detach())
+        self.outputs.append(state.outputs.view(*state.outputs.size()).detach())
+        self.targets.append(state.targets.view(*state.targets.size()).detach())
 
     def reset_batch_data(self, state):
         self.outputs = []
@@ -94,7 +95,7 @@ class PerformanceMetric(Metric):
             outputs = outputs.squeeze(-1)
 
         outputs, targets = self._prepare_data(outputs, targets)
-        value = self.metric_fun(targets, outputs)
+        value = self.metric_fun(targets.numpy(), outputs.numpy())
         return self._update(state.phase, value=value)
 
     def _prepare_data(self, outputs, targets):
@@ -108,13 +109,41 @@ class BinaryAccuracy(PerformanceMetric):
 
     def _prepare_data(self, outputs, targets):
         outputs = torch.sigmoid(outputs)
-        return (outputs > 0.5).numpy(), (targets == 1).numpy()
+        return (outputs > 0.5), (targets == 1)
+
+
+class MulticlassAccuracy(PerformanceMetric):
+    name = "accuracy"
+    metric_fun = staticmethod(metrics.accuracy_score)
+    operator = op.gt
+
+    def _prepare_data(self, outputs, targets):
+        outputs = F.softmax(outputs, dim=-1)
+        return outputs.argmax(dim=-1), targets
 
 
 class MSE(PerformanceMetric):
     name = "mse"
     metric_fun = staticmethod(metrics.mean_squared_error)
     operator = op.lt
+
+    def _prepare_data(self, outputs, targets):
+        return outputs, targets
+
+
+class MAE(PerformanceMetric):
+    name = "mae"
+    metric_fun = staticmethod(metrics.mean_absolute_error)
+    operator = op.lt
+
+    def _prepare_data(self, outputs, targets):
+        return outputs, targets
+
+
+class AUC(PerformanceMetric):
+    name = "auc"
+    metric_fun = staticmethod(metrics.roc_auc_score)
+    operator = op.gt
 
     def _prepare_data(self, outputs, targets):
         return torch.sigmoid(outputs), targets

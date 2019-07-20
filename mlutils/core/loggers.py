@@ -1,3 +1,6 @@
+import sys
+from loguru import logger
+
 import pandas as pd
 from pathlib import Path
 
@@ -23,3 +26,12 @@ class CSVLogger(EventHandler):
         df = pd.DataFrame([results])
         df.round(6).to_csv(self.logdir / "test.log", index=False)
 
+
+config = {
+    "handlers": [
+        {"sink": sys.stdout, "enqueue": True, "format": '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | {message}'},
+        {"sink": Path('logs') / "events" / "events_{time}.log", "enqueue": True},
+    ]
+}
+
+logger.configure(**config)

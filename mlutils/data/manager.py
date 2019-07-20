@@ -80,6 +80,14 @@ class DataManager:
         return self.dataset.dim_target
 
 
+class ToyDatasetManager(DataManager):
+    def _fetch_data(self, raw_dir):
+        pass
+
+    def _process_data(self, processed_dir):
+        dataset_config = self.config.get('dataset')
+        dataset = load_class(dataset_config)
+        torch.save(dataset, processed_dir / "dataset.pt")
 
 
 
