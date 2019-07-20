@@ -4,9 +4,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from config.config import Config
-from core.engine import Engine
-from data.manager import ToyDatasetManager
+from mlutils.config.config import Config
+from mlutils.core.engine import Engine
+from mlutils.data.manager import ToyDatasetManager
 
 
 class MyEngine(Engine):
