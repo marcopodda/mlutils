@@ -1,122 +1,13 @@
 import itertools
+
+from mlutils.config import consts as const
+from mlutils.util import check
 from mlutils.util.serialize import load_yaml, save_yaml
 
 
 NOT_A_LIST_ERROR_MSG = """
 The value associated with parameter '{key}' must be a list.
 """
-
-
-# DEFAULTS = {
-#     'max_epochs': 10,
-#     'device': 'cpu',
-#     'model': {
-#         'class_name': 'modules.models.MLP',
-#         'params': {
-#             'dim_layers': [128, 64]
-#         }
-#     },
-#     'criterion': {
-#         'class_name': 'modules.criterions.BCE',
-#         'params': {}
-#     },
-#     'data': {
-#        'processor':{
-#             "root": "DATA",
-#             "name": "dataset",
-#             "raw_dir_name": "raw",
-#             "processed_dir_name": "processed",
-#             "dataset_filename": "dataset.pt",
-#             'splitter': {
-#                 "splits_dir_name": "splits",
-#                 "splits_filename": "splits.yaml",
-#                 'class_name': 'data.splitters.HoldoutSplitter',
-#                 'params': {}
-#             },
-#             "params": {}
-#         },
-#         'provider': {
-#             'dataset': {
-#                 'class_name': 'data.datasets.ToyClassificationDataset',
-#                 'params': {'num_features': 32}
-#             },
-#             'loader': {
-#                 'class_name': 'torch.utils.data.DataLoader',
-#                 'params': {
-#                     'batch_size': 32,
-#                     'shuffle': True
-#                 }
-#             }
-#         }
-#     },
-#     'optimizer': {
-#         'class_name': 'torch.optim.Adam',
-#         'params': {'lr': 0.001},
-#     },
-#     'callbacks': {
-#         'metrics': [
-#             {'class_name': 'core.metrics.BinaryAccuracy'}
-#         ]
-#     }
-# }
-
-TEST_CONFIG = {
-    'max_epochs': 10,
-    'device': 'cpu',
-    'model': {
-        'name': 'mlp',
-        'class_name': 'mlutils.modules.models.MLP',
-        'params': {'dim_layers': [128, 64]}
-    },
-    'criterion': {
-        'name': 'cross_entropy',
-        'class_name': 'mlutils.modules.criterions.CrossEntropy'
-    },
-    'data': {
-        'name': 'toy_classification',
-        'dataset': {
-            'class_name': 'mlutils.data.datasets.ToyClassificationDataset',
-            'params': {'n_samples': 10000, 'n_features': 16, 'n_informative': 8, 'n_classes': 3}
-        },
-        'splitter': {
-            'class_name': 'mlutils.data.splitters.HoldoutSplitter',
-            'params': {'stratified': True}
-        },
-        'loader': {
-            'class_name': 'torch.utils.data.DataLoader',
-            'params': {'batch_size': 32, 'shuffle': True}
-        }
-    },
-    'optimizer': {
-        'name': 'adam',
-        'class_name': 'torch.optim.Adam',
-        'params': {'lr': 0.001},
-        'scheduler': {
-            'class_name': 'torch.optim.lr_scheduler.StepLR',
-            'params': {'gamma': 0.5, 'step_size': 30},
-        },
-        # 'gradient_clipper': {
-        #     'class_name': 'core.optimizer.GradientClipper',
-        #     'params': {
-        #         'func': 'torch.nn.utils.clip_grad.clip_grad_norm_',
-        #         'args': {'max_norm': 1.0}
-        #     }
-        # },
-    },
-    'callbacks': {
-        'metrics': [
-            {'class_name': 'mlutils.core.metrics.MulticlassAccuracy'},
-            # {'class_name': 'mlutils.core.metrics.AUC'},
-            # {'class_name': 'core.metrics.Time'}
-        ],
-        'early_stopper': {
-            'class_name': 'mlutils.core.early_stopping.PatienceEarlyStopper',
-            'params': {'patience': 10}
-        },
-        'model_saver': {'class_name': 'mlutils.core.saver.ModelSaver'},
-        'loggers': [{'class_name': 'mlutils.core.loggers.CSVLogger'}]
-    }
-}
 
 
 class ConfigError(Exception):
@@ -132,6 +23,9 @@ class LoadMixin:
 
 class Config(LoadMixin):
     def __init__(self, **options):
+        for name, value in const.DEFAULTS.items():
+            setattr(self, name, value)
+
         for name, value in options.items():
             setattr(self, name, value)
 
@@ -150,9 +44,9 @@ class Config(LoadMixin):
 
     def __getattribute__(self, name):
         value = object.__getattribute__(self, name)
-        if isinstance(value, dict):
+        if check.is_dictlike(value):
             return Config(**value)
-        if isinstance(value, list) and value != [] and isinstance(value[0], dict):
+        if check.is_nonempty_sequence_of_dicts(value):
             return [Config(**v) for v in value]
         return value
 
@@ -172,7 +66,7 @@ class ModelSelectionConfig(LoadMixin):
 
     def _validate(self, ms_dict):
         for name, value in ms_dict.items():
-            if not isinstance(value, list):
+            if not check.is_iterable(value):
                 msg = NOT_A_LIST_ERROR_MSG.format(key=name)
                 raise ConfigError(msg)
 

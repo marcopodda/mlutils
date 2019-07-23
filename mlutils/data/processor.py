@@ -51,8 +51,8 @@ class ToyDataProcessor(DataProcessor):
     def _process_data(self):
         data, targets = None, None
         if dir_is_empty(self.processed_dir):
-            fn = import_string(f'sklearn.datasets.make_{self.task}')
-            features, targets = fn(**self.config.params)
+            data_generator = import_string(f'sklearn.datasets.make_{self.task}')
+            features, targets = data_generator()
             data = np.hstack(features, targets.reshape(-1, 1))
             torch.save(data, self.data_path)
         return data, targets
