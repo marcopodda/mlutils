@@ -21,21 +21,31 @@ The value associated with parameter '{key}' must be a list.
 #         'params': {}
 #     },
 #     'data': {
-#         'root': 'DATA',
-#         'name': 'toy_classification',
-#         'dataset': {
-#             'class_name': 'data.datasets.ToyClassificationDataset',
-#             'params': {'num_features': 32}
+#        'processor':{
+#             "root": "DATA",
+#             "name": "dataset",
+#             "raw_dir_name": "raw",
+#             "processed_dir_name": "processed",
+#             "dataset_filename": "dataset.pt",
+#             'splitter': {
+#                 "splits_dir_name": "splits",
+#                 "splits_filename": "splits.yaml",
+#                 'class_name': 'data.splitters.HoldoutSplitter',
+#                 'params': {}
+#             },
+#             "params": {}
 #         },
-#         'splitter': {
-#             'class_name': 'data.splitters.HoldoutSplitter',
-#             'params': {}
-#         },
-#         'loader': {
-#             'class_name': 'torch.utils.data.DataLoader',
-#             'params': {
-#                 'batch_size': 32,
-#                 'shuffle': True
+#         'provider': {
+#             'dataset': {
+#                 'class_name': 'data.datasets.ToyClassificationDataset',
+#                 'params': {'num_features': 32}
+#             },
+#             'loader': {
+#                 'class_name': 'torch.utils.data.DataLoader',
+#                 'params': {
+#                     'batch_size': 32,
+#                     'shuffle': True
+#                 }
 #             }
 #         }
 #     },
@@ -54,14 +64,17 @@ TEST_CONFIG = {
     'max_epochs': 10,
     'device': 'cpu',
     'model': {
+        'name': 'mlp',
         'class_name': 'mlutils.modules.models.MLP',
         'params': {'dim_layers': [128, 64]}
     },
-    'criterion': {'class_name': 'mlutils.modules.criterions.CrossEntropy'},
+    'criterion': {
+        'name': 'cross_entropy',
+        'class_name': 'mlutils.modules.criterions.CrossEntropy'
+    },
     'data': {
-        'root': 'mlutils/DATA',
         'name': 'toy_classification',
-         'dataset': {
+        'dataset': {
             'class_name': 'mlutils.data.datasets.ToyClassificationDataset',
             'params': {'n_samples': 10000, 'n_features': 16, 'n_informative': 8, 'n_classes': 3}
         },
@@ -75,6 +88,7 @@ TEST_CONFIG = {
         }
     },
     'optimizer': {
+        'name': 'adam',
         'class_name': 'torch.optim.Adam',
         'params': {'lr': 0.001},
         'scheduler': {
@@ -116,35 +130,38 @@ class LoadMixin:
 
 
 class Config(LoadMixin):
-    def __init__(self, use_defaults=True, **config_dict):
-        if use_defaults:
-            for name, value in TEST_CONFIG.items():
-                setattr(self, name, value)
+    def __init__(self, **options):
+        for name, value in options.items():
+            setattr(self, name, value)
 
-        for name, value in config_dict.items():
+    def update(self, **options):
+        for name, value in options.items():
             setattr(self, name, value)
 
     def __getitem__(self, name):
-        return getattr(self, name)
+        return self.__getattribute__(name)
+
+    def __setitem__(self, name, value):
+        setattr(self, name, value)
+
+    def __getattr__(self, name):
+        return self.__getattribute__(name)
+
+    def __getattribute__(self, name):
+        value = object.__getattribute__(self, name)
+        if isinstance(value, dict):
+            return Config(**value)
+        if isinstance(value, list) and value != [] and isinstance(value[0], dict):
+            return [Config(**v) for v in value]
+        return value
 
     def __contains__(self, name):
-        return name in self.__dict__ and self.__dict__[name] not in [None, {}, []]
-
-    def get(self, *keys):
-        config_dict = self.__dict__.copy()
-        for key in keys:
-            config_dict = config_dict[key]
-
-        if isinstance(config_dict, list):
-            return [Config(use_defaults=False, **cd) for cd in config_dict]
-
-        if not isinstance(config_dict, dict):
-            raise ValueError(f"'{config_dict}' is not a dictionary.")
-
-        return Config(use_defaults=False, **config_dict)
+        obj_dict = object.__getattribute__(self, "__dict__")
+        return name in obj_dict and obj_dict[name] not in [None, {}, []]
 
     def save(self, path):
-        save_yaml(self.__dict__, path)
+        obj_dict = object.__getattribute__(self, "__dict__")
+        save_yaml(obj_dict, path)
 
 
 class ModelSelectionConfig(LoadMixin):

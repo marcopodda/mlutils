@@ -3,6 +3,8 @@ import os
 from importlib import import_module
 from importlib.util import find_spec as importlib_find
 
+from ..config import Config
+
 
 def import_string(dotted_path):
     """
@@ -24,11 +26,14 @@ def import_string(dotted_path):
         ) from err
 
 
-def load_class(obj_config, **kwargs):
-    obj_class = import_string(obj_config.class_name)
+def load_class(obj, *args, **kwargs):
+    if isinstance(obj, str):
+        obj_class = import_string(obj)
 
-    params = kwargs
-    if 'params' in obj_config:
-        params.update(**obj_config.params)
+    if isinstance(obj, Config):
+        obj_class = import_string(obj.class_name)
+        if 'params' in obj:
+            obj.params.update(**kwargs)
+        kwargs = obj.params
 
-    return obj_class(**params)
+    return obj_class(*args, **kwargs)

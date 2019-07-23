@@ -20,13 +20,11 @@ class Optimizer(EventHandler):
 
         self.scheduler = None
         if 'scheduler' in config:
-            sched_config = config.get('scheduler')
-            self.scheduler = load_class(sched_config, optimizer=self.optimizer)
+            self.scheduler = load_class(config.scheduler, optimizer=self.optimizer)
 
         self.gradient_clipper = None
         if 'gradient_clipper' in config:
-            grad_clip_config = config.get('gradient_clipper')
-            self.gradient_clipper = load_class(grad_clip_config)
+            self.gradient_clipper = load_class(config.gradient_clipper)
 
     def on_fit_start(self, state):
         if 'optimizer_state' in state:

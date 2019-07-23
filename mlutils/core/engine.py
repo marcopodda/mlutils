@@ -15,48 +15,40 @@ from pathlib import Path
 
 
 class Engine(EventDispatcher):
-    def __init__(self, config, dim_input, dim_target, save_path):
+    def __init__(self, config, dim_input, dim_target):
         super().__init__()
         self.config = config
         self.default_device = get_device(config)
 
         self.state = State(
-            model=load_class(config.get('model'), dim_input=dim_input, dim_target=dim_target),
-            criterion=load_class(config.get('criterion')))
+            model=load_class(config.model, dim_input=dim_input, dim_target=dim_target),
+            criterion=load_class(config.criterion))
 
         # callbacks
-        self.register(Optimizer(config.get('optimizer'), self.model))
+        self.register(Optimizer(config.optimizer, self.model))
 
         # metrics
         additional_metrics = []
         if 'callbacks' in config:
-            callback_configs = config.get('callbacks')
-            if 'metrics' in callback_configs:
-                metrics_config = callback_configs.get('metrics')
-                for metric_config in metrics_config:
+            if 'metrics' in config.callbacks:
+                for metric_config in config.callbacks.metrics:
                     metric = load_class(metric_config)
                     additional_metrics.append(metric)
         self.register(Monitor(additional_metrics))
 
         if 'callbacks' in config:
-            callback_configs = config.get('callbacks')
-            if 'early_stopper' in callback_configs:
-                early_stopper_config = callback_configs.get('early_stopper')
-                early_stopper = load_class(early_stopper_config)
+            if 'early_stopper' in config.callbacks:
+                early_stopper = load_class(config.callbacks.early_stopper)
                 self.register(early_stopper)
 
-            if 'model_saver' in callback_configs:
-                model_saver_config = callback_configs.get('model_saver')
-                model_saver = load_class(model_saver_config)
+            if 'model_saver' in config.callbacks:
+                model_saver = load_class(config.callbacks.modelsaver)
                 self.register(model_saver)
 
-            if 'loggers' in callback_configs:
-                loggers_config = callback_configs.get('loggers')
-                for logger_config in loggers_config:
+            if 'loggers' in config.callbacks:
+                for logger_config in config.callbacks.loggers:
                     logger = load_class(logger_config)
                     self.register(logger)
-
-        self.save_path = save_path
 
     @property
     def model(self):
@@ -94,11 +86,11 @@ class Engine(EventDispatcher):
         logger.info(f'{"Starting" if start_epoch == 0 else "Resuming"} training at epoch: {self.state.epoch}')
 
         for epoch in range(start_epoch, start_epoch + num_epochs):
-            self.state.update(epoch=epoch)
-
             if self.state.stop_training is True:
-                logger.info(f"Early stopping at epoch {self.state.epoch - 1}.")
+                logger.info(f"Early stopping at epoch {self.state.epoch}.")
                 break
+
+            self.state.update(epoch=epoch)
 
             logger.info(f"Starting epoch {self.state.epoch}.")
             self._dispatch('on_epoch_start', self.state)
@@ -129,12 +121,14 @@ class Engine(EventDispatcher):
 
         self._dispatch('on_fit_end', self.state)
 
-    def evaluate(self, test_loader, test_device=None):
+    def evaluate(self, test_loader, path, test_device=None):
         logger.info("Starting final evaluation.")
+
         try:
-            self.load(self.save_path, best=True)
+            self.load(path, best=True)
         except FileNotFoundError:
-            self.load(self.save_path, best=False)
+            logger.warning("Best model not found. Loading last model.")
+            self.load(path, best=False)
 
         self.set_test_mode()
         self.set_device(test_device)
