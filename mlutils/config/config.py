@@ -23,40 +23,34 @@ class LoadMixin:
 
 class Config(LoadMixin):
     def __init__(self, **options):
-        for name, value in const.DEFAULTS.items():
-            setattr(self, name, value)
-
-        for name, value in options.items():
-            setattr(self, name, value)
+        self._dict = dict(**options)
 
     def update(self, **options):
         for name, value in options.items():
             setattr(self, name, value)
 
     def __getitem__(self, name):
-        return self.__getattribute__(name)
+        return getattr(self, name)
 
     def __setitem__(self, name, value):
-        setattr(self, name, value)
+        self._dict[name] = value
 
     def __getattr__(self, name):
-        return self.__getattribute__(name)
+        value = self._dict[name]
 
-    def __getattribute__(self, name):
-        value = object.__getattribute__(self, name)
         if check.is_dictlike(value):
             return Config(**value)
+
         if check.is_nonempty_sequence_of_dicts(value):
-            return [Config(**v) for v in value]
+            return [Config(**v) for v in value if v != {}]
+
         return value
 
     def __contains__(self, name):
-        obj_dict = object.__getattribute__(self, "__dict__")
-        return name in obj_dict and obj_dict[name] not in [None, {}, []]
+        return name in self._dict and self._dict[name] not in [None, {}, []]
 
     def save(self, path):
-        obj_dict = object.__getattribute__(self, "__dict__")
-        save_yaml(obj_dict, path)
+        save_yaml(self._dict, path)
 
 
 class ModelSelectionConfig(LoadMixin):

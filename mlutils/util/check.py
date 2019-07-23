@@ -10,4 +10,4 @@ def is_dictlike(obj):
 
 
 def is_nonempty_sequence_of_dicts(obj):
-    return is_iterable(obj) and obj != [] and is_dictlike(obj[0])
+    return is_iterable(obj) and len(obj) > 0 and all(is_dictlike(o) for o in obj)
