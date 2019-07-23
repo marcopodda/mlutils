@@ -1,5 +1,4 @@
 import numpy as np
-from pathlib import Path
 
 from sklearn.model_selection import KFold, StratifiedKFold, ShuffleSplit, StratifiedShuffleSplit
 
@@ -122,4 +121,3 @@ class NestedCVSplitter(Splitter):
             self.inner_splitter = KFold(n_splits=inner_folds)
 
         super().__init__(splits=None, stratified=stratified)
-

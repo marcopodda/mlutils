@@ -1,7 +1,6 @@
-import torch
 from torch.utils.data.dataloader import default_collate as torch_collate
 
-from .sample import Sample, FEATURES_NAME, TARGET_NAME
+from .sample import FEATURES_NAME, TARGET_NAME
 
 
 class Batch:
@@ -24,7 +23,7 @@ class Batch:
         self.keys = list(data[0].keys())
         for pattern in data[1:]:
             if set(pattern.keys()) != set(self.keys):
-                raise ValueError(f'Patterns have different keys: had {keys} before, but found {pattern.keys()}.')
+                raise ValueError(f'Patterns have different keys: had {self.keys} before, but found {pattern.keys()}.')
 
     def __len__(self):
         return self.length

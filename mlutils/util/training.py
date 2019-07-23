@@ -6,7 +6,7 @@ def get_device(config):
     return torch.device("cuda" if use_cuda else "cpu")
 
 
-def entry2log(name):
+def _entry2log(name):
     if name in ['loss', 'test', 'time']:
         return name
     if name == 'training':
@@ -23,15 +23,15 @@ def pretty_print(result):
     test_keys = [k for (k, v) in result.items() if 'test' in k]
 
     for train_key, val_key in zip(training_keys, validation_keys):
-        name = "_".join([entry2log(k) for k in train_key.split("_")])
+        name = "_".join([_entry2log(k) for k in train_key.split("_")])
         value = f"{result[train_key]:.6f}"
         log.append(f"{name}: {value}")
-        name = "_".join([entry2log(k) for k in val_key.split("_")])
+        name = "_".join([_entry2log(k) for k in val_key.split("_")])
         value = f"{result[val_key]:.6f}"
         log.append(f"{name}: {value}")
 
     for test_key in test_keys:
-        name = "_".join([entry2log(k) for k in test_key.split("_")])
+        name = "_".join([_entry2log(k) for k in test_key.split("_")])
         value = f"{result[test_key]:.6f}"
         log.append(f"{name}: {value}")
 

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from mlutils.core.logging import logger
-from mlutils.utils.module_loading import load_class, import_string
+from mlutils.core.event.handler import EventHandler
 
 
 class ModelSaver(EventHandler):

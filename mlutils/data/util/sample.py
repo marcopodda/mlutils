@@ -1,5 +1,3 @@
-import torch
-
 FEATURES_NAME = 'x'
 TARGET_NAME = 'y'
 

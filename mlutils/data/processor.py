@@ -3,7 +3,6 @@ import numpy as np
 
 import torch
 
-from mlutils.config import Config
 from mlutils.util.module_loading import import_string
 from mlutils.util.os import get_or_create_dir, dir_is_empty
 

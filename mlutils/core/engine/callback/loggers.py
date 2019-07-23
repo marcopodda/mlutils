@@ -1,5 +1,3 @@
-import os
-
 import pandas as pd
 from pathlib import Path
 
@@ -20,8 +18,6 @@ class CSVLogger(EventHandler):
         df.round(6).to_csv(filename, index=False)
 
     def on_test_epoch_end(self, state):
-        results = {k: v for (k,v) in state.epoch_results.items() if 'test' in k}
+        results = {k: v for (k, v) in state.epoch_results.items() if 'test' in k}
         df = pd.DataFrame([results])
         df.round(6).to_csv(self.logdir / "test.log", index=False)
-
-

@@ -1,7 +1,7 @@
 from torch.utils.data import Subset
 from mlutils.util.module_loading import load_class
-from mlutils.util.serialize import load_yaml, save_yaml
-from .splitters import Split
+from mlutils.util.serialize import load_yaml
+from .splitter import Split
 
 
 class DataProvider:

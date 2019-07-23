@@ -2,7 +2,7 @@ from pathlib import Path
 
 from mlutils.config import Config
 from mlutils.util.os import get_or_create_dir
-from mlutils.data.splitters import CVHoldoutSplitter, HoldoutSplitter
+# from mlutils.data.splitter import CVHoldoutSplitter, HoldoutSplitter
 
 
 ROOT = Path('RUNS')
@@ -34,20 +34,15 @@ class Experiment:
         path = ROOT / self.name / self.exp_type
         return get_or_create_dir(path)
 
-    def get_exp_data_root_folder(self):
-        path = self.root_folder / "DATA"
-        return get_exp_data_root_folder(path)
-
     def run(self):
         raise NotImplementedError
 
 
-def ModelSelection(Experiment):
-    exp_type = "MODEL_SELECTION"
-    splitter_class = CVHoldoutSplitter
+# def ModelSelection(Experiment):
+#     exp_type = "MODEL_SELECTION"
+#     splitter_class = CVHoldoutSplitter
 
 
-def ModelEvaluation(Experiment):
-    exp_type = "MODEL_EVALUATION"
-    splitter_class = HoldoutSplitter
-
+# def ModelEvaluation(Experiment):
+#     exp_type = "MODEL_EVALUATION"
+#     splitter_class = HoldoutSplitter

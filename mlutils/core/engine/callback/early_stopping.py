@@ -1,8 +1,6 @@
 import operator
 import numpy as np
 
-import operator
-
 from mlutils.core.event.handler import EventHandler
 from mlutils.core.logging import logger
 

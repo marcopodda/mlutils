@@ -118,6 +118,7 @@ TEST_CONFIG = {
     }
 }
 
+
 class ConfigError(Exception):
     pass
 
@@ -184,4 +185,3 @@ class ModelSelectionConfig(LoadMixin):
             for v in itertools.product(*values):
                 params = dict(zip(keys, v))
                 yield params
-

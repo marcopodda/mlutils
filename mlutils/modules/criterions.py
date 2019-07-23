@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 
 
@@ -31,7 +30,7 @@ class CrossEntropy(LossFunction):
         self.loss = nn.CrossEntropyLoss()
 
     def reshape_targets(self, targets):
-        batch_size, dim_target = targets.size(0), targets.size(1)
+        batch_size, _ = targets.size(0), targets.size(1)
         return targets.reshape(batch_size)
 
 

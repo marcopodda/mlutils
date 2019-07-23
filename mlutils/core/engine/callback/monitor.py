@@ -1,10 +1,5 @@
-import numpy as np
-
 from mlutils.core.event.handler import EventHandler
-from mlutils.util.module_loading import load_class
-
-from .loggers import CSVLogger
-from .metrics import Loss, Time, MetricsList
+from mlutils.core.engine.callback.metrics import MetricsList, Loss
 
 
 class Monitor(EventHandler):
@@ -48,10 +43,3 @@ class Monitor(EventHandler):
 
     def on_test_epoch_end(self, state):
         self._on_epoch_end(state)
-
-
-
-
-
-
-
