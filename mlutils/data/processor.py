@@ -4,10 +4,10 @@ import numpy as np
 import torch
 
 from mlutils.config import Config
-from mlutils.utils.module_loading import import_string
-from mlutils.utils.os import get_or_create_dir, dir_is_empty
+from mlutils.util.module_loading import import_string
+from mlutils.util.os import get_or_create_dir, dir_is_empty
 
-from .splitters import HoldoutSplitter
+from .splitter import HoldoutSplitter
 
 
 class DataProcessor:
