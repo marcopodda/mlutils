@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from ..config import Config
-from ..utils.os import get_or_create_dir
-from ..data.splitters import CVHoldoutSplitter, HoldoutSplitter
+from mlutils.config import Config
+from mlutils.util.os import get_or_create_dir
+from mlutils.data.splitters import CVHoldoutSplitter, HoldoutSplitter
 
 
 ROOT = Path('RUNS')

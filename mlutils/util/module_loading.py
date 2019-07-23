@@ -3,7 +3,7 @@ import os
 from importlib import import_module
 from importlib.util import find_spec as importlib_find
 
-from ..config import Config
+from mlutils.config import Config
 
 
 def import_string(dotted_path):

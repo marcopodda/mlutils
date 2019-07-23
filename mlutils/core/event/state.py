@@ -1,8 +1,8 @@
 import torch
 import numpy as np
 
-from ..utils.training import pretty_print
-from .loggers import logger
+from mlutils.util.training import pretty_print
+from mlutils.core.logging import logger
 
 
 class State:

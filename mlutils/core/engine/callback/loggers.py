@@ -1,11 +1,9 @@
 import os
-import sys
-from loguru import logger
 
 import pandas as pd
 from pathlib import Path
 
-from .events import EventHandler
+from mlutils.core.event.handler import EventHandler
 
 
 class CSVLogger(EventHandler):
@@ -27,12 +25,3 @@ class CSVLogger(EventHandler):
         df.round(6).to_csv(self.logdir / "test.log", index=False)
 
 
-config = {
-    "handlers": [
-        # {"sink": open(os.devnull, 'w'), "enqueue": True, "format": '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | {message}'},
-        {"sink": sys.stdout, "enqueue": True, "format": '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | {message}'},
-        {"sink": Path('mlutils/logs') / "events" / "events_{time}.log", "enqueue": True},
-    ]
-}
-
-logger.configure(**config)

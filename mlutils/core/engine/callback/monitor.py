@@ -1,8 +1,8 @@
 import numpy as np
 
-from ..utils.module_loading import load_class
+from mlutils.core.event.handler import EventHandler
+from mlutils.util.module_loading import load_class
 
-from .events import EventHandler
 from .loggers import CSVLogger
 from .metrics import Loss, Time, MetricsList
 

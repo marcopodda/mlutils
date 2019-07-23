@@ -1,5 +1,5 @@
 import itertools
-from ..utils.serialize import load_yaml, save_yaml
+from mlutils.util.serialize import load_yaml, save_yaml
 
 
 NOT_A_LIST_ERROR_MSG = """

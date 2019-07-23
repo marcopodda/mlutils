@@ -1,6 +1,6 @@
 from torch.utils.data import Subset
-from ..utils.module_loading import load_class
-from ..utils.serialize import load_yaml, save_yaml
+from mlutils.util.module_loading import load_class
+from mlutils.util.serialize import load_yaml, save_yaml
 from .splitters import Split
 
 
@@ -35,14 +35,12 @@ class DataProvider:
         return len(self.splits[Split.TRAINING][0])
 
     def __iter__(self):
-        for outer_fold in range(self.outer_folds):
-            for inner_fold in range(self.inner_folds):
+        for outer_fold in range(self.num_outer_folds):
+            for inner_fold in range(self.num_inner_folds):
 
-                training_fold = self.get_loader(Split.TRAINING, outer_fold, inner_fold)
-                yield Split.TRAINING, training_fold
+                training_fold_loader = self.get_loader(Split.TRAINING, outer_fold, inner_fold)
+                validation_fold_loader = self.get_loader(Split.VALIDATION, outer_fold, inner_fold)
+                yield training_fold_loader, validation_fold_loader
 
-                validation_fold = self.get_loader(Split.VALIDATION, outer_fold, inner_fold)
-                yield Split.VALIDATION, validation_fold
-
-            test_fold = self.get_loader(Split.TEST, outer_fold, inner_fold)
-            yield Split.TEST, test_fold
+            test_fold_loader = self.get_loader(Split.TEST, outer_fold, inner_fold)
+            yield (test_fold_loader,)

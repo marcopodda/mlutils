@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data.dataloader import default_collate as torch_collate
 
-from .pattern import Pattern, FEATURES_NAME, TARGET_NAME
+from .sample import Sample, FEATURES_NAME, TARGET_NAME
 
 
 class Batch:

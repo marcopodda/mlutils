@@ -3,8 +3,8 @@ import numpy as np
 
 import operator
 
-from .events import EventHandler
-from .loggers import logger
+from mlutils.core.event.handler import EventHandler
+from mlutils.core.logging import logger
 
 
 class EarlyStopper(EventHandler):

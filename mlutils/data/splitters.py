@@ -3,7 +3,7 @@ from pathlib import Path
 
 from sklearn.model_selection import KFold, StratifiedKFold, ShuffleSplit, StratifiedShuffleSplit
 
-from ..utils.serialize import save_yaml
+from mlutils.util.serialize import save_yaml
 
 
 class Split:

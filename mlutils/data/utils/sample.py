@@ -4,7 +4,6 @@ FEATURES_NAME = 'x'
 TARGET_NAME = 'y'
 
 
-
 class Sample:
     def __init__(self, pattern_dict):
         if isinstance(pattern_dict, Sample):

@@ -1,7 +1,8 @@
 from pathlib import Path
 
-from .events import EventHandler
-from .loggers import logger
+from mlutils.core.logging import logger
+from mlutils.utils.module_loading import load_class, import_string
+
 
 class ModelSaver(EventHandler):
     def __init__(self, path=Path('mlutils/ckpts'), monitor='validation_loss'):

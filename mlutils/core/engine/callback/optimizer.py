@@ -1,7 +1,7 @@
 import torch
 
-from ..utils.module_loading import load_class, import_string
-from .events import EventHandler
+from mlutils.core.event.handler import EventHandler
+from mlutils.utils.module_loading import load_class, import_string
 
 
 class GradientClipper:

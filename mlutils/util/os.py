@@ -8,5 +8,6 @@ def get_or_create_dir(path):
         os.makedirs(path)
     return path
 
+
 def dir_is_empty(path):
     return not bool(list(Path(path).rglob('*')))
