@@ -11,7 +11,6 @@ from mlutils.data.splitter import HoldoutSplitter
 from mlutils.core.engine import Engine
 from mlutils.core.logging import Logger
 from mlutils.util.os import get_or_create_dir
-from mlutils.util.module_loading import load_class
 from mlutils.util.training import is_training_fold, is_evaluation_fold
 from mlutils.modules.models import MLP
 from mlutils.modules.criterions import BinaryCrossEntropy

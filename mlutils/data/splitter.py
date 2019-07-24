@@ -20,9 +20,12 @@ class Splitter:
         self.stratified = stratified
 
     def _validate_splits(self, splits):
-        assert all(k in splits for k in self.settings.LEARNING_MODES), f'Split names must be equal to {self.settings.LEARNING_MODES}.'
-        assert all(isinstance(splits[k], list) for k in self.settings.LEARNING_MODES), f'Splits must be lists.'
-        assert all(len(splits[k]) > 0 for k in self.settings.LEARNING_MODES), 'Splits length must be > 0.'
+        assert all(k in splits for k in self.settings.LEARNING_MODES), \
+            f'Split names must be equal to {self.settings.LEARNING_MODES}.'
+        assert all(isinstance(splits[k], list) for k in self.settings.LEARNING_MODES), \
+            f'Splits must be lists.'
+        assert all(len(splits[k]) > 0 for k in self.settings.LEARNING_MODES), \
+            'Splits length must be > 0.'
 
     def split(self, indices, stratification=None):
         if self.initialized:

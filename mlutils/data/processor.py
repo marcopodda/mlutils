@@ -7,8 +7,6 @@ from mlutils.settings import Settings
 from mlutils.util.module_loading import import_string
 from mlutils.util.os import get_or_create_dir, dir_is_empty
 
-from .splitter import HoldoutSplitter
-
 
 class DataProcessor:
     def __init__(self, config, splitter_class):

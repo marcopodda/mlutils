@@ -9,9 +9,6 @@ from mlutils.util.training import get_device
 from mlutils.core.logging import Logger
 
 
-
-
-
 class Engine(EventDispatcher):
     def __init__(self, config, model_class, criterion_class, dim_input, dim_target, ckpts_dir):
         super().__init__()
