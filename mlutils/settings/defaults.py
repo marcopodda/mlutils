@@ -29,20 +29,57 @@ FEATURES_NAME = "x"
 TARGET_NAME = "y"
 
 CONFIG = {
-    "engine":{
+    "engine": {
         "num_epochs": 10,
         "device": "cpu",
-        "model": {"params": {"dim_layers": [128, 64]}},
-        "criterion": {"params": {}},
-        "optimizer": {'class_name': 'torch.optim.Adam', 'params': {}},
+        "model": {
+            "params": {
+                "dim_layers": [128, 64]
+            }
+        },
+        "criterion": {
+            "params": {}
+        },
+        "optimizer": {
+            'class_name': 'torch.optim.Adam',
+            'params': {}
+        },
         "callbacks": {},
     },
     "data": {
         "processor": {
             "dataset_name": "toy_binary_classification",
-            "splitter": {"params": {}},
-            "params": {"n_samples": 1000, "n_classes": 2, "n_features": 16}
+            "splitter": {
+                "params": {}
+            },
+            "params": {
+                "n_samples": 1000,
+                "n_classes": 2,
+                "n_features": 16
+            }
         },
-        "provider": {"loader": {"params": {"batch_size": 32, "shuffle": True},}},
+        "dataset": {
+
+        },
+        "provider": {
+            "loader": {
+                "params": {
+                    "batch_size": 32,
+                    "shuffle": True
+                }
+            }
+        },
     },
 }
+
+SPLITTER = 'mlutils.data.splitter.HoldoutSplitter'
+LOADER = 'torch.utils.data.DataLoader'
+
+# self.processor_class = processor_class
+# self.splitter_class = splitter_class
+# self.provider_class = provider_class
+# self.dataset_class = dataset_class
+# self.loader_class = loader_class
+# self.engine_class = engine_class
+# self.model_class = model_class
+# self.criterion_class = criterion_class

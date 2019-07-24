@@ -1,17 +1,7 @@
-import numpy as np
-
-import torch
-from torch import nn
-from torch.nn import functional as F
-
 from mlutils.settings import Settings
-
-from mlutils.config import Config
-from mlutils.data.processor import ToyBinaryClassificationDataProcessor
 from mlutils.data.provider import DataProvider
 from mlutils.core.engine import Engine
 from mlutils.experiment import Experiment
-
 
 
 class MyDataProvider(DataProvider):
@@ -34,9 +24,5 @@ class MyEngine(Engine):
 
 if __name__ == "__main__":
     settings = Settings('my_settings')
-    exp = Experiment("config.yaml",
-                     processor_class=ToyBinaryClassificationDataProcessor,
-                     provider_class=MyDataProvider,
-                     engine_class=MyEngine)
+    exp = Experiment("config.yaml")
     exp.run()
-

@@ -13,15 +13,20 @@ class DataProcessor:
         self.config = config
         self.settings = Settings()
         self.root = Path(self.settings.DATA_DIR) / config.dataset_name
-        self.splitter_class = splitter_class
+        self.splitter = splitter_class(**config.splitter.params)
 
         self.raw_dir = get_or_create_dir(self.root / self.settings.RAW_DIR)
         self.processed_dir = get_or_create_dir(self.root / self.settings.PROCESSED_DIR)
         self.splits_dir = get_or_create_dir(self.root / self.settings.SPLITS_DIR)
 
         self._fetch_data()
-        data, targets = self._process_data()
-        self._split_data(data, targets=targets)
+
+        data, targets = None, None
+        if dir_is_empty(self.processed_dir):
+            data, targets = self._process_data()
+
+        if dir_is_empty(self.splits_dir) and data is not None:
+            self._split_data(data, targets=targets)
 
     def _fetch_data(self):
         raise NotImplementedError
@@ -50,20 +55,16 @@ class ToyDataProcessor(DataProcessor):
         pass
 
     def _process_data(self):
-        data, targets = None, None
-        if dir_is_empty(self.processed_dir):
-            data_generator = import_string(f'sklearn.datasets.make_{self.task}')
-            features, targets = data_generator(**self.config.params)
-            data = np.hstack([features, targets.reshape(-1, 1)])
-            torch.save(data, self.processed_dir / self.settings.DATASET_FILENAME)
+        data_generator = import_string(f'sklearn.datasets.make_{self.task}')
+        features, targets = data_generator(**self.config.params)
+        data = np.hstack([features, targets.reshape(-1, 1)])
+        torch.save(data, self.processed_dir / self.settings.DATASET_FILENAME)
         return data, targets
 
     def _split_data(self, data, targets=None):
-        if dir_is_empty(self.splits_dir) and data is not None:
-            indices = range(len(data))
-            splitter = self.splitter_class(**self.config.splitter.params)
-            splitter.split(indices, stratification=targets)
-            splitter.save(self.splits_dir / self.settings.SPLITS_FILENAME)
+        indices = range(len(data))
+        self.splitter.split(indices, stratification=targets)
+        self.splitter.save(self.splits_dir / self.settings.SPLITS_FILENAME)
 
 
 class ToyBinaryClassificationDataProcessor(ToyDataProcessor):

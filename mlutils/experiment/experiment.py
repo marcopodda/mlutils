@@ -1,19 +1,11 @@
-import torch
-
 from pathlib import Path
 
 from mlutils.config import Config
 from mlutils.settings import Settings
-from mlutils.data.processor import DataProcessor
-from mlutils.data.dataset import ToyBinaryClassificationDataset
-from mlutils.data.provider import DataProvider
-from mlutils.data.splitter import HoldoutSplitter
-from mlutils.core.engine import Engine
 from mlutils.core.logging import Logger
 from mlutils.util.os import get_or_create_dir
 from mlutils.util.training import is_training_fold, is_evaluation_fold
-from mlutils.modules.models import MLP
-from mlutils.modules.criterions import BinaryCrossEntropy
+from mlutils.util.module_loading import import_class
 
 
 class Experiment:
@@ -25,26 +17,35 @@ class Experiment:
 
     def __init__(self,
                  config_file,
-                 processor_class=DataProcessor,
-                 splitter_class=HoldoutSplitter,
-                 provider_class=DataProvider,
-                 dataset_class=ToyBinaryClassificationDataset,
-                 loader_class=torch.utils.data.DataLoader,
-                 engine_class=Engine,
-                 model_class=MLP,
-                 criterion_class=BinaryCrossEntropy):
+                 processor_class=None,
+                 provider_class=None,
+                 dataset_class=None,
+                 engine_class=None,
+                 model_class=None,
+                 criterion_class=None,
+                 splitter_class=None,
+                 loader_class=None):
+
         self.settings = Settings()
         self.config = Config.from_file(config_file)
         self.root = self.get_exp_root_folder()
 
-        self.processor_class = processor_class
-        self.splitter_class = splitter_class
-        self.provider_class = provider_class
-        self.dataset_class = dataset_class
-        self.loader_class = loader_class
-        self.engine_class = engine_class
-        self.model_class = model_class
-        self.criterion_class = criterion_class
+        self.processor_class = processor_class or import_class(
+            self.config.data.processor, default=None)
+        self.provider_class = provider_class or import_class(
+            self.config.data.provider, default=None)
+        self.dataset_class = dataset_class or import_class(
+            self.config.data.dataset, default=None)
+        self.engine_class = engine_class or import_class(
+            self.config.engine, default=None)
+        self.model_class = model_class or import_class(
+            self.config.engine.model, default=None)
+        self.criterion_class = criterion_class or import_class(
+            self.config.engine.criterion, default=None)
+        self.splitter_class = splitter_class or import_class(
+            self.config.data.processor.splitter, default=self.settings.SPLITTER)
+        self.loader_class = loader_class or import_class(
+            self.config.data.provider.loader, default=self.settings.LOADER)
 
         self.define_folder_structure()
 

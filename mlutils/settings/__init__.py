@@ -1,5 +1,4 @@
 import warnings
-from mlutils.util.serialize import save_yaml
 from simple_settings import LazySettings
 
 
@@ -13,6 +12,5 @@ class Settings(object):
                 settings = LazySettings('mlutils.settings.defaults')
             else:
                 settings = LazySettings('mlutils.settings.defaults', settings_file)
-            save_yaml(settings.CONFIG, "config.yaml")
             Settings._instance = settings
         return Settings._instance

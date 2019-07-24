@@ -7,16 +7,11 @@ from mlutils.util.serialize import save_yaml
 
 
 class Splitter:
-    def __init__(self, splits, stratified):
+    def __init__(self, stratified):
         assert hasattr(self, 'outer_splitter'), "You must define attribute 'outer_splitter'."
         assert hasattr(self, 'inner_splitter'), "You must define attribute 'inner_splitter'."
         self.settings = Settings()
-        self.initialized = splits is not None
-
-        if splits is not None:
-            self._validate_splits(splits)
-
-        self.splits = splits
+        self.initialized = False
         self.stratified = stratified
 
     def _validate_splits(self, splits):
@@ -73,7 +68,7 @@ class Splitter:
 
 
 class HoldoutSplitter(Splitter):
-    def __init__(self, splits=None, stratified=False, test_size=0.2):
+    def __init__(self, stratified=False, test_size=0.2):
         if stratified:
             self.outer_splitter = StratifiedShuffleSplit(n_splits=1, test_size=test_size)
             self.inner_splitter = StratifiedShuffleSplit(n_splits=1, test_size=test_size)
@@ -81,11 +76,11 @@ class HoldoutSplitter(Splitter):
             self.outer_splitter = ShuffleSplit(n_splits=1, test_size=test_size)
             self.inner_splitter = ShuffleSplit(n_splits=1, test_size=test_size)
 
-        super().__init__(splits=None, stratified=stratified)
+        super().__init__(stratified=stratified)
 
 
 class CVHoldoutSplitter(Splitter):
-    def __init__(self, splits=None, stratified=False, test_size=0.2, inner_folds=5):
+    def __init__(self, stratified=False, test_size=0.2, inner_folds=5):
         if stratified:
             self.outer_splitter = StratifiedShuffleSplit(n_splits=1, test_size=test_size)
             self.inner_splitter = StratifiedKFold(n_splits=inner_folds)
@@ -93,11 +88,11 @@ class CVHoldoutSplitter(Splitter):
             self.outer_splitter = ShuffleSplit(n_splits=1, test_size=test_size)
             self.inner_splitter = KFold(n_splits=inner_folds)
 
-        super().__init__(splits=None, stratified=stratified)
+        super().__init__(stratified=stratified)
 
 
 class NestedHoldoutSplitter(Splitter):
-    def __init__(self, splits=None, stratified=False, test_size=0.2, outer_folds=5):
+    def __init__(self, stratified=False, test_size=0.2, outer_folds=5):
         if stratified:
             self.outer_splitter = StratifiedKFold(n_splits=outer_folds)
             self.inner_splitter = StratifiedShuffleSplit(n_splits=1, test_size=test_size)
@@ -105,11 +100,11 @@ class NestedHoldoutSplitter(Splitter):
             self.outer_splitter = KFold(n_splits=outer_folds)
             self.inner_splitter = ShuffleSplit(n_splits=1, test_size=test_size)
 
-        super().__init__(splits=None, stratified=stratified)
+        super().__init__(stratified=stratified)
 
 
 class NestedCVSplitter(Splitter):
-    def __init__(self, splits=None, stratified=False, outer_folds=5, inner_folds=3):
+    def __init__(self, stratified=False, outer_folds=5, inner_folds=3):
         if stratified:
             self.outer_splitter = StratifiedKFold(n_splits=outer_folds)
             self.inner_splitter = StratifiedKFold(n_splits=inner_folds)
@@ -117,4 +112,4 @@ class NestedCVSplitter(Splitter):
             self.outer_splitter = KFold(n_splits=outer_folds)
             self.inner_splitter = KFold(n_splits=inner_folds)
 
-        super().__init__(splits=None, stratified=stratified)
+        super().__init__(stratified=stratified)
