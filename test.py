@@ -4,9 +4,21 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from mlutils.config.config import Config
+from mlutils.config import Config
+from mlutils.data.processor import ToyBinaryClassificationDataProcessor
+from mlutils.data.provider import DataProvider
 from mlutils.core.engine import Engine
-from mlutils.data.manager import ToyDatasetManager
+from mlutils.experiment import Experiment
+
+
+class MyDataProvider(DataProvider):
+    @property
+    def dim_features(self):
+        return 16
+
+    @property
+    def dim_target(self):
+        return 1
 
 
 class MyEngine(Engine):
@@ -18,19 +30,9 @@ class MyEngine(Engine):
 
 
 if __name__ == "__main__":
-    from pathlib import Path
-    config = Config()
-
-    datamanager = ToyDatasetManager(config.get('data'))
-    train_loader = datamanager.get_loader('training')
-    val_loader = datamanager.get_loader('validation')
-    test_loader = datamanager.get_loader('test')
-
-    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('mlutils/ckpts'))
-    engine.fit(train_loader, val_loader, num_epochs=50)
-
-    engine = MyEngine(config, datamanager.dim_input, datamanager.dim_target, save_path=Path('mlutils/ckpts'))
-    engine.load(Path('mlutils/ckpts'), best=False)
-    engine.fit(train_loader, val_loader, num_epochs=10)
-    engine.evaluate(test_loader)
+    exp = Experiment("config.yaml",
+                     processor_class=ToyBinaryClassificationDataProcessor,
+                     provider_class=MyDataProvider,
+                     engine_class=MyEngine)
+    exp.run()
 

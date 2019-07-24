@@ -13,7 +13,7 @@ class GradientClipper:
 
 class Optimizer(EventHandler):
     def __init__(self, config, model):
-        self.optimizer = load_class(config, params=model.parameters())
+        self.optimizer = load_class(config, model.parameters())
         self.model = model
 
         self.scheduler = None

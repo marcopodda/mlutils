@@ -2,7 +2,7 @@ import operator
 import numpy as np
 
 from mlutils.core.event.handler import EventHandler
-from mlutils.core.logging import logger
+from mlutils.core.logging import Logger
 
 
 class EarlyStopper(EventHandler):
@@ -11,6 +11,7 @@ class EarlyStopper(EventHandler):
         self.mode = mode
         self.patience = patience
         self.op = operator.lt if mode == "min" else operator.gt
+        self.logger = Logger()
 
 
 class PatienceEarlyStopper(EarlyStopper):
@@ -22,7 +23,7 @@ class PatienceEarlyStopper(EarlyStopper):
         best_epoch = state.best_results[self.monitor]['best_epoch']
         state.stop_training = state.epoch - best_epoch >= self.patience
         if state.stop_training is True:
-            logger.warning(f"Early stopping: epoch {state.epoch} - best epoch {best_epoch} - patience {self.patience}")
+            self.logger.warning(f"Early stopping: epoch {state.epoch} - best epoch {best_epoch} - patience {self.patience}")
 
 
 class GLEarlyStopper(EarlyStopper):
@@ -44,7 +45,7 @@ class GLEarlyStopper(EarlyStopper):
         state.stop_training = self.count >= self.patience
 
         if state.stop_training is True:
-            logger.warning(f"Early stopping: epoch {state.epoch} - count {self.count} - patience {self.patience}")
+            self.logger.warning(f"Early stopping: epoch {state.epoch} - count {self.count} - patience {self.patience}")
 
 
 class DeltaEarlyStopper(PatienceEarlyStopper):
@@ -66,4 +67,4 @@ class DeltaEarlyStopper(PatienceEarlyStopper):
         state.stop_training = self.count >= self.patience
 
         if state.stop_training is True:
-            logger.warning(f"Early stopping: epoch {state.epoch} - count {self.count} - patience {self.patience}")
+            self.logger.warning(f"Early stopping: epoch {state.epoch} - count {self.count} - patience {self.patience}")

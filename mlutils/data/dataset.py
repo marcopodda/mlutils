@@ -12,10 +12,10 @@ class FileDataset(Dataset):
     def __getitem__(self, index):
         raise NotImplementedError
 
-    @property
-    def dim_features(self):
-        raise NotImplementedError
 
-    @property
-    def dim_target(self):
-        raise NotImplementedError
+class ToyBinaryClassificationDataset(FileDataset):
+    def __getitem__(self, index):
+        data = self.data[index]
+        inputs = torch.FloatTensor(data[:-1])
+        target = torch.FloatTensor(data[-1:])
+        return inputs, target

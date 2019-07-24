@@ -108,6 +108,8 @@ venv.bak/
 
 # project specific
 DATA
+EXPERIMENTS
 ckpts
 logs
 *.pt
+*.yaml

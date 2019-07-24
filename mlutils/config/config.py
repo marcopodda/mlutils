@@ -1,6 +1,6 @@
 import itertools
 
-from mlutils.config import consts as const
+from mlutils.settings import defaults
 from mlutils.util import check
 from mlutils.util.serialize import load_yaml, save_yaml
 
@@ -22,6 +22,11 @@ class LoadMixin:
 
 
 class Config(LoadMixin):
+    @classmethod
+    def default(cls, filename="defaults.yaml"):
+        config = cls(**defaults.CONFIG)
+        config.save(filename)
+
     def __init__(self, **options):
         self._dict = dict(**options)
 
@@ -52,6 +57,8 @@ class Config(LoadMixin):
     def save(self, path):
         save_yaml(self._dict, path)
 
+    def keys(self):
+        return self._dict.keys()
 
 class ModelSelectionConfig(LoadMixin):
     def __init__(self, **ms_dict):

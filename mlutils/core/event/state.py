@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 from mlutils.util.training import pretty_print
-from mlutils.core.logging import logger
+from mlutils.core.logging import Logger
 
 
 class State:
@@ -13,6 +13,7 @@ class State:
         self.epoch_results = {}
         self.best_results = {}
         self.results = []
+        self.logger = Logger()
 
     def __getitem__(self, name):
         return getattr(self, name)
@@ -47,10 +48,10 @@ class State:
 
     def save_epoch_results(self):
         self.results.append(self.epoch_results)
-        logger.info(pretty_print(self.epoch_results))
+        self.logger.success(pretty_print(self.epoch_results))
 
     def load(self, filename):
-        logger.info(f"Loading state file {filename}")
+        self.logger.info(f"Loading state file {filename}")
         state_dict = torch.load(filename)
         self.model.load_state_dict(state_dict['model_state'])
         self.criterion.load_state_dict(state_dict['criterion_state'])
@@ -68,5 +69,5 @@ class State:
             'optimizer_state': self.optimizer_state,
             'scheduler_state': self.scheduler_state
         }
-        logger.info(f"Saving state to file {filename}")
+        self.logger.info(f"Saving state to file {filename}")
         torch.save(state_dict, filename)

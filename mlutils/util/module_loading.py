@@ -24,13 +24,18 @@ def import_string(dotted_path):
 
 
 def load_class(obj, *args, **kwargs):
+    use_config = kwargs.pop('use_config', False)
+
     if isinstance(obj, str):
         obj_class = import_string(obj)
+        return obj_class(*args, **kwargs)
 
     if isinstance(obj, Config):
         obj_class = import_string(obj.class_name)
         if 'params' in obj:
             obj.params.update(**kwargs)
         kwargs = obj.params
+        if use_config:
+            args = (obj,) + args
 
     return obj_class(*args, **kwargs)

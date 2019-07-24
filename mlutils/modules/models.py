@@ -3,10 +3,11 @@ from torch.nn import functional as F
 
 
 class MLP(nn.Module):
-    def __init__(self, dim_input=10, dim_target=2, **params):
+    def __init__(self, config, dim_input, dim_target):
         super().__init__()
+        self.config = config
         self.dim_input = dim_input
-        self.dim_layers = params['dim_layers']
+        self.dim_layers = config.params.dim_layers
         self.dim_target = dim_target
 
         self.input_layer = nn.Linear(self.dim_input, self.dim_layers[0])
