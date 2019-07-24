@@ -6,14 +6,11 @@ from mlutils.settings import Settings
 from mlutils.util.serialize import save_yaml
 
 
-settings = Settings()
-
-
 class Splitter:
     def __init__(self, splits, stratified):
         assert hasattr(self, 'outer_splitter'), "You must define attribute 'outer_splitter'."
         assert hasattr(self, 'inner_splitter'), "You must define attribute 'inner_splitter'."
-
+        self.settings = Settings()
         self.initialized = splits is not None
 
         if splits is not None:
@@ -23,9 +20,9 @@ class Splitter:
         self.stratified = stratified
 
     def _validate_splits(self, splits):
-        assert all(k in splits for k in settings.LEARNING_MODES), f'Split names must be equal to {settings.LEARNING_MODES}.'
-        assert all(isinstance(splits[k], list) for k in settings.LEARNING_MODES), f'Splits must be lists.'
-        assert all(len(splits[k]) > 0 for k in settings.LEARNING_MODES), 'Splits length must be > 0.'
+        assert all(k in splits for k in self.settings.LEARNING_MODES), f'Split names must be equal to {self.settings.LEARNING_MODES}.'
+        assert all(isinstance(splits[k], list) for k in self.settings.LEARNING_MODES), f'Splits must be lists.'
+        assert all(len(splits[k]) > 0 for k in self.settings.LEARNING_MODES), 'Splits length must be > 0.'
 
     def split(self, indices, stratification=None):
         if self.initialized:
@@ -35,14 +32,14 @@ class Splitter:
             raise ValueError("You must provide a stratification array if 'stratified' is True.")
 
         indices = np.array(indices)
-        splits = {settings.TRAINING: [], settings.VALIDATION: [], settings.TEST: []}
+        splits = {self.settings.TRAINING: [], self.settings.VALIDATION: [], self.settings.TEST: []}
 
         if stratification is not None:
             stratification = np.array(stratification)
 
         outer_splitter = self.outer_splitter.split(indices, y=stratification)
         for outer_train_idx, outer_test_idx in outer_splitter:
-            splits[settings.TEST].append([indices[outer_test_idx].tolist()])
+            splits[self.settings.TEST].append([indices[outer_test_idx].tolist()])
 
             if stratification is not None:
                 inner_stratification = stratification[outer_train_idx]
@@ -55,15 +52,15 @@ class Splitter:
                 train_inner_folds.append(outer_train_idx[inner_train_idx].tolist())
                 val_inner_folds.append(outer_train_idx[inner_val_idx].tolist())
 
-            splits[settings.TRAINING].append(train_inner_folds)
-            splits[settings.VALIDATION].append(val_inner_folds)
+            splits[self.settings.TRAINING].append(train_inner_folds)
+            splits[self.settings.VALIDATION].append(val_inner_folds)
 
         self.splits = splits
         self.initialized = True
 
     def get_split(self, partition, outer_fold=0, inner_fold=0):
         assert self.initialized, 'Not initialized.'
-        assert partition in settings.LEARNING_MODES, f'Unknown partition {partition}.'
+        assert partition in self.settings.LEARNING_MODES, f'Unknown partition {partition}.'
         assert outer_fold < self.outer_k, f"'outer_fold' must be less than {self.outer_k}, but got {outer_fold}."
         assert inner_fold < self.inner_k, f"'inner_fold' must be less than {self.inner_k}, but got {inner_fold}."
         return self.splits[partition][outer_fold][inner_fold]

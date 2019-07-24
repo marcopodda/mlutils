@@ -39,7 +39,7 @@ CONFIG = {
     },
     "data": {
         "processor": {
-            "name": "toy_binary_classification",
+            "dataset_name": "toy_binary_classification",
             "splitter": {"params": {}},
             "params": {"n_samples": 1000, "n_classes": 2, "n_features": 16}
         },

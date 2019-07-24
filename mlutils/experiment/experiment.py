@@ -17,14 +17,11 @@ from mlutils.modules.models import MLP
 from mlutils.modules.criterions import BinaryCrossEntropy
 
 
-settings = Settings()
-
-
 class Experiment:
     @property
     def name(self):
         if not hasattr(self, '_name'):
-            self._name = settings.EXP_NAME
+            self._name = self.settings.EXP_NAME
         return self._name
 
     def __init__(self,
@@ -37,7 +34,7 @@ class Experiment:
                  engine_class=Engine,
                  model_class=MLP,
                  criterion_class=BinaryCrossEntropy):
-
+        self.settings = Settings()
         self.config = Config.from_file(config_file)
         self.root = self.get_exp_root_folder()
 
@@ -55,23 +52,22 @@ class Experiment:
         self.logger = Logger(self.logs_dir)
 
     def define_folder_structure(self):
-        self.ckpts_dir = get_or_create_dir(self.root / settings.CKPTS_DIR)
-        self.config_dir = get_or_create_dir(self.root / settings.CONFIG_DIR)
-        self.data_dir = get_or_create_dir(self.root / settings.EXPDATA_DIR)
-        self.results_dir = get_or_create_dir(self.root / settings.RESULTS_DIR)
-        self.logs_dir = get_or_create_dir(self.root / settings.LOGS_DIR)
+        self.ckpts_dir = get_or_create_dir(self.root / self.settings.CKPTS_DIR)
+        self.config_dir = get_or_create_dir(self.root / self.settings.CONFIG_DIR)
+        self.data_dir = get_or_create_dir(self.root / self.settings.EXPDATA_DIR)
+        self.results_dir = get_or_create_dir(self.root / self.settings.RESULTS_DIR)
+        self.logs_dir = get_or_create_dir(self.root / self.settings.LOGS_DIR)
 
     def define_callbacks(self):
         return []
 
     def get_exp_root_folder(self):
-        path = Path(settings.EXP_DIR) / self.name
+        path = Path(self.settings.EXP_DIR) / self.name
         return get_or_create_dir(path)
 
     def run(self, resume=False):
         processor = self.processor_class(
             self.config.data.processor,
-            self.root,
             self.splitter_class)
 
         provider = self.provider_class(

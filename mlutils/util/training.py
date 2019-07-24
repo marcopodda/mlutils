@@ -3,9 +3,6 @@ import torch
 from mlutils.settings import Settings
 
 
-settings = Settings()
-
-
 def get_device(config):
     use_cuda = config.device in ["cuda", "gpu"] and torch.cuda.is_available()
     return torch.device("cuda" if use_cuda else "cpu")
@@ -20,6 +17,7 @@ def is_evaluation_fold(loader_data):
 
 
 def _entry2log(name):
+    settings = Settings()
     if name in ['loss', settings.TEST, 'time']:
         return name
     if name == settings.TRAINING:
@@ -30,6 +28,7 @@ def _entry2log(name):
 
 
 def pretty_print(result):
+    settings = Settings()
     log_msg = []
     training_keys = [k for (k, v) in result.items() if settings.TRAINING in k]
     validation_keys = [k for (k, v) in result.items() if settings.VALIDATION in k]

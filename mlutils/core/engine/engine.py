@@ -9,7 +9,7 @@ from mlutils.util.training import get_device
 from mlutils.core.logging import Logger
 
 
-settings = Settings()
+
 
 
 class Engine(EventDispatcher):
@@ -19,6 +19,7 @@ class Engine(EventDispatcher):
         self.default_device = get_device(config)
         self.logger = Logger()
         self.ckpts_dir = ckpts_dir
+        self.settings = Settings()
 
         self.state = State(
             model=model_class(config.model, dim_input, dim_target),
@@ -63,17 +64,17 @@ class Engine(EventDispatcher):
     def set_training_mode(self):
         self.model.train()
         self.criterion.train()
-        self.state.update(phase=settings.TRAINING)
+        self.state.update(phase=self.settings.TRAINING)
 
     def set_validation_mode(self):
         self.model.eval()
         self.criterion.eval()
-        self.state.update(phase=settings.VALIDATION)
+        self.state.update(phase=self.settings.VALIDATION)
 
     def set_test_mode(self):
         self.model.eval()
         self.criterion.eval()
-        self.state.update(phase=settings.TEST)
+        self.state.update(phase=self.settings.TEST)
 
     def fit(self, train_loader, val_loader=None, num_epochs=None, train_device=None, val_device=None):
         self._dispatch('on_fit_start', self.state)

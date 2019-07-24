@@ -5,12 +5,11 @@ from mlutils.util.serialize import load_yaml
 from .dataset import FileDataset
 
 
-settings = Settings()
-
 
 class DataProvider:
     def __init__(self, config, dataset_class, loader_class, data_path, splits_path):
         self.config = config
+        self.settings = Settings()
         self.dataset = dataset_class(data_path)
         self.splits = load_yaml(splits_path)
         self.loader_class = loader_class
@@ -31,18 +30,18 @@ class DataProvider:
 
     @property
     def num_outer_folds(self):
-        return len(self.splits[settings.TEST])
+        return len(self.splits[self.settings.TEST])
 
     @property
     def num_inner_folds(self):
-        return len(self.splits[settings.TRAINING][0])
+        return len(self.splits[self.settings.TRAINING][0])
 
     def __iter__(self):
         for outer_fold in range(self.num_outer_folds):
             for inner_fold in range(self.num_inner_folds):
-                training_fold_loader = self.get_loader(settings.TRAINING, outer_fold, inner_fold)
-                validation_fold_loader = self.get_loader(settings.VALIDATION, outer_fold, inner_fold)
+                training_fold_loader = self.get_loader(self.settings.TRAINING, outer_fold, inner_fold)
+                validation_fold_loader = self.get_loader(self.settings.VALIDATION, outer_fold, inner_fold)
                 yield outer_fold, inner_fold, training_fold_loader, validation_fold_loader
 
-            test_fold_loader = self.get_loader(settings.TEST, outer_fold, inner_fold)
+            test_fold_loader = self.get_loader(self.settings.TEST, outer_fold, inner_fold)
             yield outer_fold, test_fold_loader
