@@ -56,7 +56,8 @@ class State:
         self.model.load_state_dict(state_dict['model_state'])
         self.criterion.load_state_dict(state_dict['criterion_state'])
         self.optimizer_state = state_dict['optimizer_state']
-        self.scheduler_state = state_dict['scheduler_state']
+        if 'scheduler_state' in state_dict:
+            self.scheduler_state = state_dict['scheduler_state']
         self.epoch = state_dict['epoch'] + 1
         self.best_results = state_dict['best_results']
 
@@ -66,8 +67,11 @@ class State:
             'best_results': self.best_results,
             'model_state': self.model.state_dict(),
             'criterion_state': self.criterion.state_dict(),
-            'optimizer_state': self.optimizer_state,
-            'scheduler_state': self.scheduler_state
+            'optimizer_state': self.optimizer_state
         }
+        if 'scheduler_state' in self:
+            state_dict.update({
+                'scheduler_state': self.scheduler_state
+            })
         self.logger.info(f"Saving state to file {filename}")
         torch.save(state_dict, filename)
