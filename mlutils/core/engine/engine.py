@@ -1,6 +1,7 @@
-from mlutils.settings import defaults
+from mlutils.settings import Settings
 from mlutils.core.engine.callback.optimizer import Optimizer
 from mlutils.core.engine.callback.monitor import Monitor
+from mlutils.core.engine.callback.saver import ModelSaver
 from mlutils.core.event.dispatcher import EventDispatcher
 from mlutils.core.event.state import State
 from mlutils.util.module_loading import load_class
@@ -8,12 +9,16 @@ from mlutils.util.training import get_device
 from mlutils.core.logging import Logger
 
 
+settings = Settings()
+
+
 class Engine(EventDispatcher):
-    def __init__(self, config, model_class, criterion_class, dim_input, dim_target):
+    def __init__(self, config, model_class, criterion_class, dim_input, dim_target, ckpts_dir):
         super().__init__()
         self.config = config
         self.default_device = get_device(config)
         self.logger = Logger()
+        self.ckpts_dir = ckpts_dir
 
         self.state = State(
             model=model_class(config.model, dim_input, dim_target),
@@ -35,14 +40,12 @@ class Engine(EventDispatcher):
             early_stopper = load_class(config.callbacks.early_stopper)
             self.register(early_stopper)
 
-        if 'model_saver' in config.callbacks:
-            model_saver = load_class(config.callbacks.modelsaver)
-            self.register(model_saver)
-
         if 'loggers' in config.callbacks:
             for logger_config in config.callbacks.loggers:
                 logger = load_class(logger_config)
                 self.register(logger)
+
+        self.register(ModelSaver(self.ckpts_dir))
 
     @property
     def model(self):
@@ -60,17 +63,17 @@ class Engine(EventDispatcher):
     def set_training_mode(self):
         self.model.train()
         self.criterion.train()
-        self.state.update(phase=defaults.TRAINING)
+        self.state.update(phase=settings.TRAINING)
 
     def set_validation_mode(self):
         self.model.eval()
         self.criterion.eval()
-        self.state.update(phase=defaults.VALIDATION)
+        self.state.update(phase=settings.VALIDATION)
 
     def set_test_mode(self):
         self.model.eval()
         self.criterion.eval()
-        self.state.update(phase=defaults.TEST)
+        self.state.update(phase=settings.TEST)
 
     def fit(self, train_loader, val_loader=None, num_epochs=None, train_device=None, val_device=None):
         self._dispatch('on_fit_start', self.state)

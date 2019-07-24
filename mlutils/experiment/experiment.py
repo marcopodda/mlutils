@@ -3,7 +3,7 @@ import torch
 from pathlib import Path
 
 from mlutils.config import Config
-from mlutils.settings import defaults
+from mlutils.settings import Settings
 from mlutils.data.processor import DataProcessor
 from mlutils.data.dataset import ToyBinaryClassificationDataset
 from mlutils.data.provider import DataProvider
@@ -17,11 +17,14 @@ from mlutils.modules.models import MLP
 from mlutils.modules.criterions import BinaryCrossEntropy
 
 
+settings = Settings()
+
+
 class Experiment:
     @property
     def name(self):
         if not hasattr(self, '_name'):
-            self._name = defaults.EXP_NAME
+            self._name = settings.EXP_NAME
         return self._name
 
     def __init__(self,
@@ -38,8 +41,6 @@ class Experiment:
         self.config = Config.from_file(config_file)
         self.root = self.get_exp_root_folder()
 
-
-
         self.processor_class = processor_class
         self.splitter_class = splitter_class
         self.provider_class = provider_class
@@ -54,17 +55,17 @@ class Experiment:
         self.logger = Logger(self.logs_dir)
 
     def define_folder_structure(self):
-        self.ckpts_dir = get_or_create_dir(self.root / defaults.CKPTS_DIR)
-        self.config_dir = get_or_create_dir(self.root / defaults.CONFIG_DIR)
-        self.data_dir = get_or_create_dir(self.root / defaults.EXPDATA_DIR)
-        self.results_dir = get_or_create_dir(self.root / defaults.RESULTS_DIR)
-        self.logs_dir = get_or_create_dir(self.root / defaults.LOGS_DIR)
+        self.ckpts_dir = get_or_create_dir(self.root / settings.CKPTS_DIR)
+        self.config_dir = get_or_create_dir(self.root / settings.CONFIG_DIR)
+        self.data_dir = get_or_create_dir(self.root / settings.EXPDATA_DIR)
+        self.results_dir = get_or_create_dir(self.root / settings.RESULTS_DIR)
+        self.logs_dir = get_or_create_dir(self.root / settings.LOGS_DIR)
 
     def define_callbacks(self):
         return []
 
     def get_exp_root_folder(self):
-        path = Path(defaults.EXP_DIR) / self.name
+        path = Path(settings.EXP_DIR) / self.name
         return get_or_create_dir(path)
 
     def run(self, resume=False):
@@ -85,7 +86,8 @@ class Experiment:
             self.model_class,
             self.criterion_class,
             provider.dim_features,
-            provider.dim_target)
+            provider.dim_target,
+            self.ckpts_dir)
 
         engine.set_callbacks(self.config.engine)
 

@@ -5,7 +5,7 @@ from mlutils.core.event.handler import EventHandler
 
 
 class ModelSaver(EventHandler):
-    def __init__(self, path=Path('mlutils/ckpts'), monitor='validation_loss'):
+    def __init__(self, path, monitor='validation_loss'):
         self.path = path
         self.monitor = monitor
         self.logger = Logger()

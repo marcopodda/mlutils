@@ -1,4 +1,7 @@
-from mlutils.settings import defaults
+from mlutils.settings import Settings
+
+
+settings = Settings()
 
 
 class Sample:
@@ -6,16 +9,16 @@ class Sample:
         if isinstance(pattern_dict, Sample):
             self.__dict__ = pattern_dict.__dict__
         else:
-            self.x = pattern_dict[defaults.FEATURES_NAME]
+            self.x = pattern_dict[settings.FEATURES_NAME]
 
-            keys = [k for k in pattern_dict if k != defaults.FEATURES_NAME]
+            keys = [k for k in pattern_dict if k != settings.FEATURES_NAME]
             for k in keys:
                 setattr(self, k, pattern_dict[k])
 
         self._validate()
 
     def _validate(self):
-        assert defaults.FEATURES_NAME in self
+        assert settings.FEATURES_NAME in self
 
     def __getitem__(self, name):
         return getattr(self, name)

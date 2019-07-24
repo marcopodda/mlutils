@@ -1,6 +1,10 @@
 import torch
 
-from mlutils.settings import defaults
+from mlutils.settings import Settings
+
+
+settings = Settings()
+
 
 def get_device(config):
     use_cuda = config.device in ["cuda", "gpu"] and torch.cuda.is_available()
@@ -16,20 +20,20 @@ def is_evaluation_fold(loader_data):
 
 
 def _entry2log(name):
-    if name in ['loss', defaults.TEST, 'time']:
+    if name in ['loss', settings.TEST, 'time']:
         return name
-    if name == defaults.TRAINING:
+    if name == settings.TRAINING:
         return 'train'
-    if name == defaults.VALIDATION:
+    if name == settings.VALIDATION:
         return 'val'
     return name[:3]
 
 
 def pretty_print(result):
     log_msg = []
-    training_keys = [k for (k, v) in result.items() if defaults.TRAINING in k]
-    validation_keys = [k for (k, v) in result.items() if defaults.VALIDATION in k]
-    test_keys = [k for (k, v) in result.items() if defaults.TEST in k]
+    training_keys = [k for (k, v) in result.items() if settings.TRAINING in k]
+    validation_keys = [k for (k, v) in result.items() if settings.VALIDATION in k]
+    test_keys = [k for (k, v) in result.items() if settings.TEST in k]
 
     for train_key, val_key in zip(training_keys, validation_keys):
         name = "_".join([_entry2log(k) for k in train_key.split("_")])

@@ -12,6 +12,22 @@ VALIDATION = "validation"
 TEST = "test"
 LEARNING_MODES = [TRAINING, VALIDATION, TEST]
 
+RAW_DIR = "raw"
+PROCESSED_DIR = "processed"
+SPLITS_DIR = "splits"
+SPLITS_FILENAME = "splits.yaml"
+
+DATASET_FILENAME = "dataset.pt"
+
+LAST_CKPT_FILENAME = 'last.pt'
+BEST_CKPT_FILENAME = 'best.pt'
+
+CSV_TRAINING_FILENAME = 'training.csv'
+CSV_TEST_FILENAME = 'test.log'
+
+FEATURES_NAME = "x"
+TARGET_NAME = "y"
+
 CONFIG = {
     "engine":{
         "num_epochs": 10,
@@ -30,19 +46,3 @@ CONFIG = {
         "provider": {"loader": {"params": {"batch_size": 32, "shuffle": True},}},
     },
 }
-
-RAW_DIR = "raw"
-PROCESSED_DIR = "processed"
-SPLITS_DIR = "splits"
-SPLITS_FILENAME = "splits.yaml"
-
-DATASET_FILENAME = "dataset.pt"
-
-LAST_CKPT_FILENAME = 'last.pt'
-BEST_CKPT_FILENAME = 'best.pt'
-
-CSV_TRAINING_FILENAME = 'training.csv'
-CSV_TEST_FILENAME = 'test.log'
-
-FEATURES_NAME = "x"
-TARGET_NAME = "y"

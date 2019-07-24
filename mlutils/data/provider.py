@@ -1,8 +1,11 @@
 from torch.utils.data import Subset
-from mlutils.settings import defaults
+from mlutils.settings import Settings
 from mlutils.util.module_loading import load_class
 from mlutils.util.serialize import load_yaml
 from .dataset import FileDataset
+
+
+settings = Settings()
 
 
 class DataProvider:
@@ -28,18 +31,18 @@ class DataProvider:
 
     @property
     def num_outer_folds(self):
-        return len(self.splits[defaults.TEST])
+        return len(self.splits[settings.TEST])
 
     @property
     def num_inner_folds(self):
-        return len(self.splits[defaults.TRAINING][0])
+        return len(self.splits[settings.TRAINING][0])
 
     def __iter__(self):
         for outer_fold in range(self.num_outer_folds):
             for inner_fold in range(self.num_inner_folds):
-                training_fold_loader = self.get_loader(defaults.TRAINING, outer_fold, inner_fold)
-                validation_fold_loader = self.get_loader(defaults.VALIDATION, outer_fold, inner_fold)
+                training_fold_loader = self.get_loader(settings.TRAINING, outer_fold, inner_fold)
+                validation_fold_loader = self.get_loader(settings.VALIDATION, outer_fold, inner_fold)
                 yield outer_fold, inner_fold, training_fold_loader, validation_fold_loader
 
-            test_fold_loader = self.get_loader(defaults.TEST, outer_fold, inner_fold)
+            test_fold_loader = self.get_loader(settings.TEST, outer_fold, inner_fold)
             yield outer_fold, test_fold_loader

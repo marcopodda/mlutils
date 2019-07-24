@@ -1,6 +1,9 @@
 from torch.utils.data.dataloader import default_collate as torch_collate
 
-from mlutils.settings import defaults
+from mlutils.settings import Settings
+
+
+settings = Settings()
 
 
 class Batch:
@@ -39,11 +42,11 @@ class Batch:
 
     @property
     def features(self):
-        return self[defaults.FEATURES_NAME]
+        return self[settings.FEATURES_NAME]
 
     @property
     def target(self):
-        return self[defaults.TARGET_NAME]
+        return self[settings.TARGET_NAME]
 
 
 def default_collate(batch_data):
