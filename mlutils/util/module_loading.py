@@ -44,8 +44,8 @@ def load_class(obj, *args, **kwargs):
 def import_class(config, default):
     if 'class_name' in config:
         return import_string(config.class_name)
-    
+
     if default is None:
-        raise Exception('If class name is not provided in config, default cannot be None')
-    
+        raise Exception("If class name is not provided in config, 'default' cannot be None")
+
     return import_string(default)

@@ -1,5 +1,6 @@
+from mlutils.settings import Settings
 from mlutils.core.event.handler import EventHandler
-from mlutils.util.module_loading import load_class, import_string
+from mlutils.util.module_loading import import_string, import_class
 
 
 class GradientClipper:
@@ -13,16 +14,19 @@ class GradientClipper:
 
 class Optimizer(EventHandler):
     def __init__(self, config, model):
-        self.optimizer = load_class(config, model.parameters())
+        self.settings = Settings()
         self.model = model
+        optimizer_class = import_class(config, default=self.settings.OPTIMIZER)
+        self.optimizer = optimizer_class(model.parameters(), **config.params)
 
         self.scheduler = None
         if 'scheduler' in config:
-            self.scheduler = load_class(config.scheduler, optimizer=self.optimizer)
+            scheduler_class = import_class(config.scheduler, default=None)
+            self.scheduler = scheduler_class(self.optimizer, **config.scheduler.params)
 
         self.gradient_clipper = None
         if 'gradient_clipper' in config:
-            self.gradient_clipper = load_class(config.gradient_clipper)
+            self.gradient_clipper = GradientClipper(config.gradient_clipper.func, config.gradient_clipper.args)
 
     def on_fit_start(self, state):
         if 'optimizer_state' in state:

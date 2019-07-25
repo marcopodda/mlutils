@@ -74,12 +74,4 @@ CONFIG = {
 
 SPLITTER = 'mlutils.data.splitter.HoldoutSplitter'
 LOADER = 'torch.utils.data.DataLoader'
-
-# self.processor_class = processor_class
-# self.splitter_class = splitter_class
-# self.provider_class = provider_class
-# self.dataset_class = dataset_class
-# self.loader_class = loader_class
-# self.engine_class = engine_class
-# self.model_class = model_class
-# self.criterion_class = criterion_class
+OPTIMIZER = 'torch.optim.Adam'
