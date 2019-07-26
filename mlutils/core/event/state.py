@@ -49,6 +49,7 @@ class State:
     def save_epoch_results(self):
         self.results.append(self.epoch_results)
         self.logger.success(pretty_print(self.epoch_results))
+        # self.logger.success(pretty_print(self.best_results, best=True))
 
     def load(self, filename):
         self.logger.info(f"Loading state file {filename}")

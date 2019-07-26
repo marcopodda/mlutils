@@ -27,13 +27,13 @@ def _entry2log(name):
     return name[:3]
 
 
-def pretty_print(result):
+def pretty_print(result, best=False):
     settings = Settings()
     log_msg = []
     training_keys = [k for (k, v) in result.items() if settings.TRAINING in k]
     validation_keys = [k for (k, v) in result.items() if settings.VALIDATION in k]
     test_keys = [k for (k, v) in result.items() if settings.TEST in k]
-
+    print(result)
     for train_key, val_key in zip(training_keys, validation_keys):
         name = "_".join([_entry2log(k) for k in train_key.split("_")])
         value = f"{result[train_key]:.6f}"
@@ -47,4 +47,5 @@ def pretty_print(result):
         value = f"{result[test_key]:.6f}"
         log_msg.append(f"{name}: {value}")
 
-    return "\t".join(log_msg)
+    best = "BEST: " if best is True else ""
+    return best + "\t".join(log_msg)

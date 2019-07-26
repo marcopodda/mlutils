@@ -8,7 +8,6 @@ class Batch:
         assert data != []
         self.settings = Settings()
         self._validate_keys(data)
-        self.length = len(data)
 
         for key in self.keys:
             setattr(self, key, [])
@@ -27,7 +26,7 @@ class Batch:
                 raise ValueError(f'Patterns have different keys: had {self.keys} before, but found {pattern.keys()}.')
 
     def __len__(self):
-        return self.length
+        return len(self.data)
 
     def __getitem__(self, name):
         return getattr(self, name)

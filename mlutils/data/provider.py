@@ -1,15 +1,28 @@
 from torch.utils.data import Subset
 from mlutils.settings import Settings
 from mlutils.util.serialize import load_yaml
+from mlutils.util.module_loading import import_class
 
 
 class DataProvider:
-    def __init__(self, config, dataset_class, loader_class, data_path, splits_path):
+    def __init__(self,
+                 config,
+                 data_path,
+                 splits_path,
+                 dataset_class=None,
+                 loader_class=None):
+
         self.config = config
         self.settings = Settings()
+
+        self.loader_class = loader_class or import_class(
+            config.loader, default=self.settings.LOADER)
+
+        dataset_class = dataset_class or import_class(
+            config.dataset, default=None)
         self.dataset = dataset_class(data_path)
+
         self.splits = load_yaml(splits_path)
-        self.loader_class = loader_class
 
     def get_loader(self, split_name, outer_fold=0, inner_fold=0):
         indices = self.splits[split_name][outer_fold][inner_fold]

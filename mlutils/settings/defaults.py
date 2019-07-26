@@ -75,3 +75,6 @@ CONFIG = {
 SPLITTER = 'mlutils.data.splitter.HoldoutSplitter'
 LOADER = 'torch.utils.data.DataLoader'
 OPTIMIZER = 'torch.optim.Adam'
+
+MODEL_SELECTION = "MODEL_SELECTION"
+MODEL_ASSESSMENT = "MODEL_ASSESSMENT"

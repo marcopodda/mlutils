@@ -4,15 +4,21 @@ import numpy as np
 import torch
 
 from mlutils.settings import Settings
-from mlutils.util.module_loading import import_string
+from mlutils.util.module_loading import import_string, import_class
 from mlutils.util.os import get_or_create_dir, dir_is_empty
 
 
 class DataProcessor:
-    def __init__(self, config, splitter_class):
+    def __init__(self,
+                 config,
+                 splitter_class=None):
+
         self.config = config
         self.settings = Settings()
         self.root = Path(self.settings.DATA_DIR) / config.dataset_name
+
+        splitter_class = splitter_class or import_class(
+            config.splitter, default=self.settings.SPLITTER)
         self.splitter = splitter_class(**config.splitter.params)
 
         self.raw_dir = get_or_create_dir(self.root / self.settings.RAW_DIR)

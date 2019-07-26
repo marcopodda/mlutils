@@ -10,17 +10,21 @@ from mlutils.core.logging import Logger
 
 
 class Engine(EventDispatcher):
-    def __init__(self, config, model_class, criterion_class, dim_input, dim_target, ckpts_dir):
+    def __init__(self, config, model_class, criterion_class, dim_input, dim_target, ckpts_dir, logs_dir):
         super().__init__()
         self.config = config
         self.default_device = get_device(config)
-        self.logger = Logger()
         self.ckpts_dir = ckpts_dir
         self.settings = Settings()
+
+        # initialize logger
+        self.logger = Logger(logs_dir)
+        self.logger.info('Logger initialized.')
 
         self.state = State(
             model=model_class(config.model, dim_input, dim_target),
             criterion=criterion_class(config.criterion))
+
 
     def set_callbacks(self, config):
         # callbacks
@@ -43,7 +47,8 @@ class Engine(EventDispatcher):
                 logger = load_class(logger_config)
                 self.register(logger)
 
-        self.register(ModelSaver(self.ckpts_dir))
+        if self.ckpts_dir is not None:
+            self.register(ModelSaver(self.ckpts_dir))
 
     @property
     def model(self):
@@ -115,19 +120,10 @@ class Engine(EventDispatcher):
             self.state.save_epoch_results()
 
         self._dispatch('on_fit_end', self.state)
+        return self.state.best_results
 
-    def evaluate(self, test_loader, path, test_device=None):
-        self.logger.info("Starting final evaluation.")
-
-        try:
-            self.load(path, best=True)
-        except FileNotFoundError:
-            self.logger.warning("Best model not found. Loading last model.")
-            try:
-                self.load(path, best=False)
-            except FileNotFoundError:
-                self.logger.warning("Last model not found, could not start evaluation.")
-                return
+    def evaluate(self, test_loader, test_device=None):
+        self.logger.info("Starting evaluation.")
 
         self.set_test_mode()
         self.set_device(test_device)
@@ -135,7 +131,9 @@ class Engine(EventDispatcher):
         self._dispatch('on_test_epoch_start', self.state)
         self._evaluate_epoch(test_loader)
         self._dispatch('on_test_epoch_end', self.state)
+
         self.state.save_epoch_results()
+        return self.state.epoch_results
 
     def _train_epoch(self, loader):
         self.logger.info(f"Training epoch {self.state.epoch}.")
