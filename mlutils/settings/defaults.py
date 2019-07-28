@@ -17,6 +17,8 @@ PROCESSED_DIR = "processed"
 SPLITS_DIR = "splits"
 SPLITS_FILENAME = "splits.yaml"
 
+CONFIG_FILENAME = "config.yaml"
+
 DATASET_FILENAME = "dataset.pt"
 
 LAST_CKPT_FILENAME = 'last.pt'
@@ -72,7 +74,7 @@ CONFIG = {
     },
 }
 
-SPLITTER = 'mlutils.data.splitter.HoldoutSplitter'
+SPLITTER = 'mlutils.data.splitter.CVHoldoutSplitter'
 LOADER = 'torch.utils.data.DataLoader'
 OPTIMIZER = 'torch.optim.Adam'
 

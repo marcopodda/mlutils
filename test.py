@@ -6,6 +6,7 @@ from mlutils.data.processor import ToyBinaryClassificationDataProcessor
 from mlutils.data.provider import DataProvider
 from mlutils.core.engine import Engine
 from mlutils.experiment import Experiment
+from mlutils.experiment.model_selection.selector import ModelSelector
 
 
 class MyDataProvider(DataProvider):
@@ -27,16 +28,21 @@ class MyEngine(Engine):
 
 
 if __name__ == "__main__":
-    config = Config.from_file("config.yaml")
+    configs = [Config.from_file(f"config{i}.yaml") for i in range(3)]
     settings = Settings('my_settings')
-    processor = ToyBinaryClassificationDataProcessor(config.data.processor)
-    provider = MyDataProvider(config.data.provider, processor.data_path, processor.splits_path)
-    exp = Experiment(config, Path("exp"), provider.dim_features, provider.dim_target)
+    selector = ModelSelector(configs, Path("MODEL_SELECTION"), processor_class=ToyBinaryClassificationDataProcessor, provider_class=MyDataProvider)
+    print(selector.run())
 
-    for fold_data in provider:
-        if len(fold_data) == 4:
-            outfold, infold, trloader, valoader = fold_data
-            exp.run_training(trloader, valoader)
-        if len(fold_data) == 2:
-            outfold, teloader = fold_data
-            exp.run_evaluation(teloader, exp.ckpts_dir)
+    # for fold_data in provider:
+    #     ckpts_dir = None
+
+    #     if len(fold_data) == 4:
+    #         outfold, infold, trloader, valoader = fold_data
+    #         exp = Experiment(config, Path(settings.EXP_DIR) / f"exp_{outfold}_{infold}", provider.dim_features, provider.dim_target)
+    #         exp.run_training(trloader, valoader)
+    #         ckpts_dir = exp.ckpts_dir
+
+    #     if len(fold_data) == 2:
+    #         outfold, teloader = fold_data
+    #         exp = Experiment(config, Path(settings.EXP_DIR) / f"exp_{outfold}", provider.dim_features, provider.dim_target)
+    #         exp.run_evaluation(teloader, ckpts_dir)

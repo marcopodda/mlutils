@@ -25,7 +25,6 @@ class Engine(EventDispatcher):
             model=model_class(config.model, dim_input, dim_target),
             criterion=criterion_class(config.criterion))
 
-
     def set_callbacks(self, config):
         # callbacks
         self.register(Optimizer(config.optimizer, self.model))

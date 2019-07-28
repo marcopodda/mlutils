@@ -52,10 +52,10 @@ class Experiment:
 
     def run_training(self, train_loader, val_loader=None):
         engine = self.get_engine()
-        best_train_results = engine.fit(train_loader,
+        train_results = engine.fit(train_loader,
                                         val_loader=val_loader,
                                         num_epochs=self.config.engine.num_epochs)
-        return best_train_results
+        return train_results
 
     def run_evaluation(self, test_loader, ckpt_dir):
         engine = self.get_engine(ckpt_dir)

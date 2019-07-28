@@ -46,12 +46,8 @@ class DataProvider:
     def num_inner_folds(self):
         return len(self.splits[self.settings.TRAINING][0])
 
-    def __iter__(self):
-        for outer_fold in range(self.num_outer_folds):
-            for inner_fold in range(self.num_inner_folds):
-                training_fold_loader = self.get_loader(self.settings.TRAINING, outer_fold, inner_fold)
-                validation_fold_loader = self.get_loader(self.settings.VALIDATION, outer_fold, inner_fold)
-                yield outer_fold, inner_fold, training_fold_loader, validation_fold_loader
-
-            test_fold_loader = self.get_loader(self.settings.TEST, outer_fold, inner_fold)
-            yield outer_fold, test_fold_loader
+    def get_model_selection_fold(self, outer_fold):
+        for inner_fold in range(self.num_inner_folds):
+            training_fold_loader = self.get_loader(self.settings.TRAINING, outer_fold, inner_fold)
+            validation_fold_loader = self.get_loader(self.settings.VALIDATION, outer_fold, inner_fold)
+            yield training_fold_loader, validation_fold_loader
