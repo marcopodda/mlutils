@@ -5,9 +5,9 @@ from mlutils.core.event.handler import EventHandler
 
 
 class ModelSaver(EventHandler):
-    def __init__(self, path, monitor='validation_loss'):
+    def __init__(self, path, **kwargs):
         self.path = path
-        self.monitor = monitor
+        self.monitor = kwargs.pop('monitor', 'validation_loss')
         self.logger = Logger()
 
     def on_fit_end(self, state):

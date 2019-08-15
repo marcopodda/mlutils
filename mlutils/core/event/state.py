@@ -25,31 +25,9 @@ class State:
         for name, value in values.items():
             setattr(self, name, value)
 
-    def init_epoch_results(self, metrics):
-        for metric in metrics:
-            key = f"{self.phase}_{metric.name}"
-
-            if key not in self.epoch_results:
-                self.epoch_results.update(**{key: {}})
-
-            if key not in self.best_results:
-                best = -np.float('inf') if metric.greater_is_better else np.float('inf')
-                self.best_results.update(**{key: {'best': best, 'best_epoch': 0}})
-
-    def update_epoch_results(self, metrics):
-        for metric in metrics:
-            key = f"{self.phase}_{metric.name}"
-            self.epoch_results.update(**metrics.get_data(self.phase))
-            best_value = self.best_results[key]['best']
-            current_value = metric.get_value(self.phase)
-            if metric.operator(current_value, best_value):
-                self.best_results[key]['best'] = current_value
-                self.best_results[key]['best_epoch'] = self.epoch
-
     def save_epoch_results(self):
         self.results.append(self.epoch_results)
         self.logger.success(pretty_print(self.epoch_results))
-        # self.logger.success(pretty_print(self.best_results, best=True))
 
     def load(self, filename):
         self.logger.info(f"Loading state file {filename}")

@@ -2,6 +2,7 @@ from mlutils.settings import Settings
 from mlutils.core.engine.callback.optimizer import Optimizer
 from mlutils.core.engine.callback.monitor import Monitor
 from mlutils.core.engine.callback.saver import ModelSaver
+from mlutils.core.engine.callback.logger import CSVLogger
 from mlutils.core.event.dispatcher import EventDispatcher
 from mlutils.core.event.state import State
 from mlutils.util.module_loading import load_class
@@ -10,15 +11,16 @@ from mlutils.core.logging import Logger
 
 
 class Engine(EventDispatcher):
-    def __init__(self, config, model_class, criterion_class, dim_input, dim_target, ckpts_dir, logs_dir):
+    def __init__(self, config, model_class, criterion_class, dim_input, dim_target, ckpts_dir, logdir):
         super().__init__()
         self.config = config
         self.default_device = get_device(config)
         self.ckpts_dir = ckpts_dir
+        self.logdir = logdir
         self.settings = Settings()
 
         # initialize logger
-        self.logger = Logger(logs_dir)
+        self.logger = Logger(logdir)
         self.logger.info('Logger initialized.')
 
         self.state = State(
@@ -41,13 +43,20 @@ class Engine(EventDispatcher):
             early_stopper = load_class(config.callbacks.early_stopper)
             self.register(early_stopper)
 
-        if 'loggers' in config.callbacks:
-            for logger_config in config.callbacks.loggers:
-                logger = load_class(logger_config)
-                self.register(logger)
+        if 'logger' in config.callbacks:
+            csv_logger = CSVLogger(logdir=self.logdir)
+            self.register(csv_logger)
 
         if self.ckpts_dir is not None:
-            self.register(ModelSaver(self.ckpts_dir))
+            if 'saver' in config.callbacks:
+                saver_config = config.callbacks.saver
+                params = saver_config.params.asdict() if 'params' in saver_config else {}
+            else:
+                self.logger.warning('Saver config not found, using defaults.')
+                params = {}
+            self.register(ModelSaver(self.ckpts_dir, **params))
+
+
 
     @property
     def model(self):
@@ -86,6 +95,7 @@ class Engine(EventDispatcher):
 
         for epoch in range(start_epoch, start_epoch + num_epochs):
             if self.state.stop_training is True:
+                print(f"Early stopping at epoch {self.state.epoch}.")
                 self.logger.info(f"Early stopping at epoch {self.state.epoch}.")
                 break
 

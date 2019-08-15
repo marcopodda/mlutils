@@ -5,19 +5,22 @@ from mlutils.core.event.handler import EventHandler
 
 
 class CSVLogger(EventHandler):
-    def __init__(self, logdir=Path('mlutils/logs')):
+    def __init__(self, logdir=Path('logs')):
         self.logdir = logdir
 
     def on_epoch_end(self, state):
-        filename = self.logdir / "results.log"
+        filename = self.logdir / "results.csv"
+
         if not filename.exists() or state.epoch == 0:
             df = pd.DataFrame([state.epoch_results])
+
         else:
-            df = pd.read_csv(filename, index_col=False)
+            df = pd.read_csv(filename, index_col=None)
             df = pd.concat([df, pd.DataFrame([state.epoch_results])], sort=False)
+
         df.round(6).to_csv(filename, index=False)
 
     def on_test_epoch_end(self, state):
         results = {k: v for (k, v) in state.epoch_results.items() if 'test' in k}
         df = pd.DataFrame([results])
-        df.round(6).to_csv(self.logdir / "test.log", index=False)
+        df.round(6).to_csv(self.logdir / "test.csv", index=False)

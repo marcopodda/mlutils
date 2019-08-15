@@ -30,19 +30,10 @@ class MyEngine(Engine):
 if __name__ == "__main__":
     configs = [Config.from_file(f"config{i}.yaml") for i in range(3)]
     settings = Settings('my_settings')
-    selector = ModelSelector(configs, Path("MODEL_SELECTION"), processor_class=ToyBinaryClassificationDataProcessor, provider_class=MyDataProvider)
+    selector = ModelSelector(
+        configs,
+        path=Path("MODEL_SELECTION"),
+        processor_class=ToyBinaryClassificationDataProcessor,
+        provider_class=MyDataProvider)
+
     print(selector.run())
-
-    # for fold_data in provider:
-    #     ckpts_dir = None
-
-    #     if len(fold_data) == 4:
-    #         outfold, infold, trloader, valoader = fold_data
-    #         exp = Experiment(config, Path(settings.EXP_DIR) / f"exp_{outfold}_{infold}", provider.dim_features, provider.dim_target)
-    #         exp.run_training(trloader, valoader)
-    #         ckpts_dir = exp.ckpts_dir
-
-    #     if len(fold_data) == 2:
-    #         outfold, teloader = fold_data
-    #         exp = Experiment(config, Path(settings.EXP_DIR) / f"exp_{outfold}", provider.dim_features, provider.dim_target)
-    #         exp.run_evaluation(teloader, ckpts_dir)

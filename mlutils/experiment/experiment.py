@@ -31,7 +31,7 @@ class Experiment:
             self.config.engine.criterion, default=None)
 
         self.ckpts_dir = get_or_create_dir(self.root / self.settings.CKPTS_DIR)
-        self.logs_dir = get_or_create_dir(self.root / self.settings.LOGS_DIR)
+        self.logdir = get_or_create_dir(self.root / self.settings.LOGS_DIR)
 
     def get_engine(self, ckpt_dir=None):
         engine = self.engine_class(
@@ -41,7 +41,7 @@ class Experiment:
             self.dim_features,
             self.dim_target,
             self.ckpts_dir,
-            self.logs_dir)
+            self.logdir)
 
         engine.set_callbacks(self.config.engine)
 

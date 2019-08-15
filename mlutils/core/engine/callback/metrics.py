@@ -1,5 +1,5 @@
 import time
-import operator as op
+import operator
 
 import torch
 from torch.nn import functional as F
@@ -16,7 +16,7 @@ class Metric:
 
     @property
     def greater_is_better(self):
-        return self.operator == op.gt
+        return self.op == operator.gt
 
     def _update(self, phase, value):
         setattr(self, phase, value)
@@ -65,7 +65,7 @@ class MetricsList:
 
 class Loss(Metric):
     name = "loss"
-    operator = op.lt
+    op = operator.lt
 
     def __init__(self):
         super().__init__()
@@ -85,7 +85,7 @@ class Loss(Metric):
 
 class Time(Metric):
     name = "time"
-    operator = op.lt
+    op = operator.lt
 
     def __init__(self):
         super().__init__()
@@ -129,6 +129,7 @@ class PerformanceMetric(Metric):
             outputs = outputs.squeeze(-1)
 
         outputs, targets = self._prepare_data(outputs, targets)
+        outputs, targets = outputs.detach(), targets.detach()
         value = self.metric_fun(targets.numpy(), outputs.numpy())
         return self._update(state.phase, value=value)
 
@@ -139,7 +140,7 @@ class PerformanceMetric(Metric):
 class BinaryAccuracy(PerformanceMetric):
     name = "accuracy"
     metric_fun = staticmethod(metrics.accuracy_score)
-    operator = op.gt
+    op = operator.gt
 
     def _prepare_data(self, outputs, targets):
         outputs = torch.sigmoid(outputs)
@@ -149,7 +150,7 @@ class BinaryAccuracy(PerformanceMetric):
 class MulticlassAccuracy(PerformanceMetric):
     name = "accuracy"
     metric_fun = staticmethod(metrics.accuracy_score)
-    operator = op.gt
+    op = operator.gt
 
     def _prepare_data(self, outputs, targets):
         outputs = F.softmax(outputs, dim=-1)
@@ -159,7 +160,7 @@ class MulticlassAccuracy(PerformanceMetric):
 class MSE(PerformanceMetric):
     name = "mse"
     metric_fun = staticmethod(metrics.mean_squared_error)
-    operator = op.lt
+    op = operator.lt
 
     def _prepare_data(self, outputs, targets):
         return outputs, targets
@@ -168,7 +169,7 @@ class MSE(PerformanceMetric):
 class MAE(PerformanceMetric):
     name = "mae"
     metric_fun = staticmethod(metrics.mean_absolute_error)
-    operator = op.lt
+    op = operator.lt
 
     def _prepare_data(self, outputs, targets):
         return outputs, targets
@@ -177,7 +178,7 @@ class MAE(PerformanceMetric):
 class AUC(PerformanceMetric):
     name = "auc"
     metric_fun = staticmethod(metrics.roc_auc_score)
-    operator = op.gt
+    op = operator.gt
 
     def _prepare_data(self, outputs, targets):
         return torch.sigmoid(outputs), targets

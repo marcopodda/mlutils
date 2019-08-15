@@ -26,6 +26,7 @@ class ModelSelector:
 
     def run(self, outer_fold=0):
         config_results = []
+
         for i, config in enumerate(self.configs):
             processor = self.processor_class(config.processor)
             provider = self.provider_class(config.provider, processor.data_path, processor.splits_path)
@@ -41,6 +42,7 @@ class ModelSelector:
 
         averages = self.average_results(config_results, provider.num_inner_folds)
         best_idx = self.select_best(averages)
+        print("best: ", best_idx)
         return self.configs[best_idx]
 
     def average_results(self, config_results, num_inner_folds):

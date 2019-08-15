@@ -8,10 +8,19 @@ from mlutils.core.logging import Logger
 class EarlyStopper(EventHandler):
     def __init__(self, monitor, mode, patience):
         self.monitor = monitor
-        self.mode = mode
+        self.mode = self.set_mode(monitor)
         self.patience = patience
-        self.op = operator.lt if mode == "min" else operator.gt
+        self.count = 1
+        self.op = operator.lt if self.mode == "min" else operator.gt
         self.logger = Logger()
+
+    def set_mode(self, monitor):
+        if 'loss' in monitor:
+            return 'min'
+        if 'acc' in monitor:
+            return 'max'
+        self.logger.warning("Inferring mode for early stopping: 'min'.")
+        return 'min'
 
 
 class PatienceEarlyStopper(EarlyStopper):
@@ -30,11 +39,10 @@ class GLEarlyStopper(EarlyStopper):
     def __init__(self, monitor="validation_loss", mode="min", patience=10, alpha=5):
         super().__init__(monitor, mode, patience)
         self.alpha = alpha
-        self.count = 1
 
     def on_epoch_end(self, state):
         current_value = state.epoch_results[self.monitor]
-        best_value = state.best_results[self.monitor]['best']
+        best_value = state.best_results[self.monitor]['prev_best']
 
         if self.mode == 'min':
             delta = (current_value / best_value - 1)
@@ -49,14 +57,13 @@ class GLEarlyStopper(EarlyStopper):
 
 
 class DeltaEarlyStopper(PatienceEarlyStopper):
-    def __init__(self, monitor="validation_loss", mode="min", patience=10, min_delta=1e-5):
+    def __init__(self, monitor="validation_accuracy", mode="max", patience=5, min_delta=1e-5):
         super().__init__(monitor, mode, patience)
         self.min_delta = min_delta
-        self.count = 1
 
     def on_epoch_end(self, state):
         current_value = state.epoch_results[self.monitor]
-        best_value = state.best_results[self.monitor]['best']
+        best_value = state.best_results[self.monitor]['prev_best']
 
         if self.op(current_value, best_value):
             delta = np.abs(current_value - best_value)

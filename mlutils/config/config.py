@@ -54,6 +54,9 @@ class Config(LoadMixin):
     def keys(self):
         return self._dict.keys()
 
+    def asdict(self):
+        return self._dict
+
 
 class ModelSelectionConfig(LoadMixin):
     def __init__(self, **ms_dict):
